@@ -4,20 +4,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current state
 
-This directory holds no code yet: no package manifest, build tooling, or tests. There are no build, lint, or test commands to run. The only contents are the source documents in `my_docs/` and the agent docs in `docs/agents/`.
+The design is settled and the code is not yet written, so there are no build, lint, or test commands to run. The stack is decided: React and FastAPI with Postgres, Redis and MinIO in Docker Compose.
 
-The directory name and those documents indicate a personal portfolio for Ali Saleh (AI Development Specialist: AI automation, agents and integrations). No framework or hosting choice is recorded here, so confirm the stack with the user before scaffolding instead of assuming one.
+Work is tracked in GitHub Issues. The milestone 1 spec is #1 and its tickets are its sub-issues; #2 and #3 outline the later milestones. Read the spec before proposing structure or tooling.
 
-Once a stack exists, replace this section with the real commands (dev server, build, lint, single-test invocation) and an architecture overview.
+When the first code lands, replace this section with the real commands (run, test, single test, lint) and an architecture overview.
+
+## Design
+
+- **Vocabulary**: `CONTEXT.md` defines the project's terms (Climb, Stage, Visit, Progress and the rest). Use them exactly in code, copy and issues.
+- **Decisions**: `docs/adr/` records the choices a reader would otherwise undo, such as the 3D scene and anonymous Visitors.
+- **Frontend work**: load the `design-taste-frontend` and `emil-design-eng` skills before building UI, and audit finished UI with `web-design-guidelines`. Ali asked for these by name.
+
+## Models
+
+Sonnet implements and Opus reviews. When dispatching a subagent, set its model to match the work: `sonnet` to build a ticket, `opus` to review code.
 
 ## Source content (`my_docs/`)
 
-Portfolio copy must come from these files. Do not invent roles, dates, metrics, or project details.
+Site copy comes from these files and from Ali's own words. Reproduce roles, dates and metrics exactly as written (95% detection recall, 97% track purity, 92% classification accuracy, and so on).
 
-- `Ali_Saleh_CV_AI_Development_Specialist.pdf` is the primary source: summary, skills by category, experience, six AI automation and agent projects (Agentic Coding Workflow Automation, Claude Skills Suite, Drift Triage Co-Pilot, Argus, Concierge, Maintainer's Copilot), education and certifications. It is a PDF, so read it with the Read tool rather than grep.
-- `additional-skill.txt` is the user's note on the Kirelo role: full-stack and DevOps duties, building workers connected to RunPod with watchdogs, RunPod MCP, and hosting on Vercel and Supabase. The current CV's Kirelo entry already covers all of this, so the CV wording wins. The note's one extra fact is a hobby (hiking).
+`my_docs/` is git-ignored because the repo is public and the CV carries Ali's phone number. The files exist only on Ali's machine, and the phone number stays out of tracked files.
 
-The metrics quoted in the CV (95% detection recall, 97% track purity, 92% classification accuracy, and so on) are the user's own figures. Reproduce them exactly as written.
+- `Ali_Saleh_CV_AI_Development_Specialist.pdf` is the primary source: summary, skills by category, experience, six AI automation and agent projects, education and certifications. Read it with the Read tool, since grep cannot search a PDF.
+- `additional-skill.txt` is Ali's note on the Kirelo role. The CV's Kirelo entry already covers it, so the CV wording wins. Its one extra fact is that Ali hikes.
+- `Ali_Saleh-avatar.jpg` is the Portrait.
+- `Ali_Saleh_CV.MOV` is the Video CV: 84 seconds of 1080p HEVC at 115 MB, in English, without captions by Ali's decision.
 
 ## Agent skills
 
