@@ -1,6 +1,22 @@
 {
 	admin off
 	auto_https off
+
+	# Privacy (ADR 0002): no access log is written, deliberately. The site block
+	# has no `log` directive, and access logs would hold every client address.
+	# Caddy's own error log also records the request, address included, so it is
+	# filtered: the address, port and all request headers are deleted from it.
+	log {
+		format filter {
+			wrap json
+			fields {
+				request>remote_ip delete
+				request>remote_port delete
+				request>client_ip delete
+				request>headers delete
+			}
+		}
+	}
 }
 
 :80 {
@@ -11,7 +27,15 @@
 	import /etc/caddy/media.caddy
 
 	handle /api/* {
-		reverse_proxy api:8000
+		reverse_proxy api:8000 {
+			# The API takes the client address from this header (only to hash
+			# it, never to store it). Set it, do not append to it: whatever the
+			# client sent is replaced by the address Caddy saw, so it cannot be
+			# forged. The API port is not published, so Caddy is the only way in.
+			header_up X-Forwarded-For {remote_host}
+			header_up -Forwarded
+			header_up -X-Real-Ip
+		}
 	}
 
 	# Vite dev server, including its hot-reload websocket.
