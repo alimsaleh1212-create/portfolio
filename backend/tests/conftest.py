@@ -75,7 +75,10 @@ def test_database_url(settings: Settings) -> Iterator[str]:
 def empty_database_url(test_database_url: str) -> str:
     """The test database with every content table emptied."""
     assert make_url(test_database_url).database.endswith("_test")  # pyright: ignore[reportOptionalMemberAccess]
-    execute(test_database_url, "TRUNCATE profile, stages, projects RESTART IDENTITY")
+    execute(
+        test_database_url,
+        "TRUNCATE profile, stages, projects, media_items RESTART IDENTITY",
+    )
     return test_database_url
 
 

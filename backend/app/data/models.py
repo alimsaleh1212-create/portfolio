@@ -6,13 +6,18 @@ worth a table of their own. Stages and Projects are real tables, each with a
 unique key and an explicit position for ordering.
 """
 
+from datetime import datetime
+
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    DateTime,
+    Float,
     Integer,
     String,
     Text,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -72,3 +77,25 @@ class ProjectRow(Base):
     description: Mapped[str] = mapped_column(Text)
     stack: Mapped[list[str]] = mapped_column(ARRAY(Text))
     metrics: Mapped[list[dict[str, str]]] = mapped_column(JSONB)
+
+
+class MediaItemRow(Base):
+    """One prepared media item, keyed by its role (portrait, video_cv, cv_pdf).
+
+    `variants` lists the stored objects as JSON (kind, format, key, size and
+    dimensions). `source_sha256` and `settings_hash` say what the objects were
+    made from, so the seed can tell when nothing needs doing.
+    """
+
+    __tablename__ = "media_items"
+
+    role: Mapped[str] = mapped_column(String(16), primary_key=True)
+    source_sha256: Mapped[str] = mapped_column(String(64))
+    settings_hash: Mapped[str] = mapped_column(String(64))
+    alt: Mapped[str | None] = mapped_column(Text)
+    download_name: Mapped[str | None] = mapped_column(Text)
+    duration_seconds: Mapped[float | None] = mapped_column(Float)
+    variants: Mapped[list[dict]] = mapped_column(JSONB)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
