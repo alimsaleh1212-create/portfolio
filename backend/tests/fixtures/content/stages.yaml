@@ -1,0 +1,11 @@
+stages:
+  - key: trailhead
+    name: Trailhead
+    period: 2016 – 2018
+    body: I studied.
+    challenge: "PLACEHOLDER: Ali will write this Challenge."
+  - key: ridge
+    name: Ridge
+    period: null
+    body: I built projects.
+    challenge: A real challenge text.

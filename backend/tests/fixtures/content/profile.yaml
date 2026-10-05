@@ -1,0 +1,26 @@
+name: Test Person
+headline: Test Headline
+location: Testville
+summary: I am a test profile. I write short sentences.
+links:
+  email: test@example.com
+  linkedin: https://linkedin.com/in/test
+  github: https://github.com/test
+skills:
+  - category: Languages
+    items: [Python, SQL]
+experience:
+  - role: Tester
+    organization: Test Co
+    location: Nowhere
+    period: 2020 – 2021
+    highlights:
+      - I tested things.
+education:
+  - title: B.Sc., Testing
+    institution: Test University
+    location: Testland
+    year: "2016"
+certifications:
+  - title: Test Certificate
+    issuer: Test Academy
