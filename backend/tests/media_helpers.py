@@ -142,12 +142,11 @@ def top_level_boxes(path: Path) -> list[str]:
 METADATA_MARKERS = (
     b"Exif",
     b"EXIF",
-    b"XMP",
+    b"<?xpacket",
     b"ns.adobe.com",
     b"ICC_PROFILE",
     b"ICCP",
     b"icc ",
-    b"GPS",
     PLANTED_OWNER.encode(),
     PLANTED_CAMERA.encode(),
 )
