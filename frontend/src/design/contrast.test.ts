@@ -13,11 +13,14 @@ const color = (name: string) => tokens.get(`--color-${name}`)!;
 /** Surfaces text can sit on: the page, a raised panel and the dawn glow behind the identity column. */
 const SURFACES = ["ground", "raised", "glow"];
 
-const sources = import.meta.glob(["../**/*.tsx", "!../**/*.test.tsx", "!../test/**"], {
-  query: "?raw",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
+const sources = import.meta.glob(
+  ["../**/*.tsx", "!../**/*.test.tsx", "!../test/**"],
+  {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  },
+) as Record<string, string>;
 
 const colors = names("--color-");
 const used = new Set<string>();
@@ -27,23 +30,34 @@ for (const source of Object.values(sources)) {
 
 describe("text contrast, WCAG AA", () => {
   it("is measuring the colours the components use", () => {
-    expect([...used]).toEqual(expect.arrayContaining(["ink", "ink-muted", "accent", "alert"]));
+    expect([...used]).toEqual(
+      expect.arrayContaining(["ink", "ink-muted", "accent", "alert"]),
+    );
   });
 
   // Text on the accent fill is the button label; every other text colour sits on a surface.
   const onSurfaces = [...used].filter((name) => name !== "on-accent");
-  const cases = onSurfaces.flatMap((fg) => SURFACES.map((bg) => [fg, bg] as const));
+  const cases = onSurfaces.flatMap((fg) =>
+    SURFACES.map((bg) => [fg, bg] as const),
+  );
 
   it.each(cases)("text-%s on %s is at least 4.5:1", (fg, bg) => {
     expect(contrastRatio(color(fg), color(bg))).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
-  it.each(["accent", "accent-hover"])("button label on %s is at least 4.5:1", (fill) => {
-    expect(contrastRatio(color("on-accent"), color(fill))).toBeGreaterThanOrEqual(AA_TEXT);
-  });
+  it.each(["accent", "accent-hover"])(
+    "button label on %s is at least 4.5:1",
+    (fill) => {
+      expect(
+        contrastRatio(color("on-accent"), color(fill)),
+      ).toBeGreaterThanOrEqual(AA_TEXT);
+    },
+  );
 
   it.each(SURFACES)("the focus ring on %s is at least 3:1", (bg) => {
-    expect(contrastRatio(color("focus"), color(bg))).toBeGreaterThanOrEqual(AA_UI);
+    expect(contrastRatio(color("focus"), color(bg))).toBeGreaterThanOrEqual(
+      AA_UI,
+    );
   });
 
   it("passes for a known pair, so the check can fail", () => {

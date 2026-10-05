@@ -14,7 +14,12 @@ const tokens: TokenNames = {
 
 // Every component and page source, as text. Tests and the design checks themselves are not components.
 const sources = import.meta.glob(
-  ["../**/*.{ts,tsx}", "!../**/*.test.{ts,tsx}", "!../design/**", "!../test/**"],
+  [
+    "../**/*.{ts,tsx}",
+    "!../**/*.test.{ts,tsx}",
+    "!../design/**",
+    "!../test/**",
+  ],
   {
     query: "?raw",
     import: "default",
@@ -30,7 +35,10 @@ describe("the checker", () => {
     ['<p style={{ color: "#ff0000" }} />', "hard-coded colour #ff0000"],
     ['<p style={{ color: "rgb(1 2 3)" }} />', "colour function"],
     ['<p style={{ marginTop: "12px" }} />', "hard-coded size"],
-    ['<p style={{ transitionDuration: "300ms" }} />', "hard-coded size or time 300ms"],
+    [
+      '<p style={{ transitionDuration: "300ms" }} />',
+      "hard-coded size or time 300ms",
+    ],
     ['<p className="duration-300" />', "numeric timing"],
     ['<p className="bg-red-500" />', "default palette"],
     ['<p className="text-white" />', "default palette"],
@@ -75,20 +83,27 @@ describe("the stylesheet uses tokens only", () => {
           !line.includes("@import") &&
           !line.startsWith("@custom-variant"),
       )
-      .filter((line) => /#[0-9a-fA-F]{3,8}\b|\b\d*\.?\d+(px|ms|rem|em|s)\b/.test(line));
+      .filter((line) =>
+        /#[0-9a-fA-F]{3,8}\b|\b\d*\.?\d+(px|ms|rem|em|s)\b/.test(line),
+      );
     expect(offending).toEqual([]);
   });
 });
 
 describe("the favicon", () => {
   it("is drawn only in palette colours (colour literals are allowed in an SVG asset if they match a token)", () => {
-    const svg = readFileSync(resolve(process.cwd(), "public/favicon.svg"), "utf8");
+    const svg = readFileSync(
+      resolve(process.cwd(), "public/favicon.svg"),
+      "utf8",
+    );
     const palette = new Set(
       [...readTokens()]
         .filter(([key]) => key.startsWith("--color-"))
         .map(([, value]) => value.toLowerCase()),
     );
-    const used = [...svg.matchAll(/#[0-9a-fA-F]{6}\b/g)].map((match) => match[0].toLowerCase());
+    const used = [...svg.matchAll(/#[0-9a-fA-F]{6}\b/g)].map((match) =>
+      match[0].toLowerCase(),
+    );
     expect(used.length).toBeGreaterThan(0);
     for (const hex of used) expect(palette).toContain(hex);
   });

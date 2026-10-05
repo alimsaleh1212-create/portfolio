@@ -54,7 +54,8 @@ export function utilityTokens(source: string): string[] {
   const found: string[] = [];
   for (const match of source.matchAll(/["'`]([^"'`\n]*)["'`]/g)) {
     for (const word of match[1].split(/\s+/)) {
-      if (/^[!a-z0-9:()\-_./[\]%]+$/.test(word) && word.length > 1) found.push(word);
+      if (/^[!a-z0-9:()\-_./[\]%]+$/.test(word) && word.length > 1)
+        found.push(word);
     }
   }
   return found;
@@ -66,10 +67,14 @@ export function findViolations(source: string, tokens: TokenNames): string[] {
   for (const match of source.matchAll(/#[0-9a-fA-F]{3,8}\b/g)) {
     problems.push(`hard-coded colour ${match[0]}`);
   }
-  for (const match of source.matchAll(/\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\(/g)) {
+  for (const match of source.matchAll(
+    /\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\(/g,
+  )) {
     problems.push(`hard-coded colour function ${match[0]}`);
   }
-  for (const match of source.matchAll(/\b\d*\.?\d+(?:px|ms|rem|em|vh|vw|dvh)\b/g)) {
+  for (const match of source.matchAll(
+    /\b\d*\.?\d+(?:px|ms|rem|em|vh|vw|dvh)\b/g,
+  )) {
     problems.push(`hard-coded size or time ${match[0]}`);
   }
   for (const match of source.matchAll(/\b\d*\.?\d+s\b(?=["'\s,;)])/g)) {
@@ -89,12 +94,18 @@ export function findViolations(source: string, tokens: TokenNames): string[] {
       continue;
     }
     const animate = /^animate-([a-z-]+)$/.exec(utility);
-    if (animate && animate[1] !== "none" && !tokens.animations.includes(animate[1])) {
+    if (
+      animate &&
+      animate[1] !== "none" &&
+      !tokens.animations.includes(animate[1])
+    ) {
       problems.push(`animation "${token}" is not a token`);
       continue;
     }
 
-    const colorUse = new RegExp(`^(${COLOR_PREFIXES.join("|")})-([a-z][a-z-]*(?:-\\d+)?)(?:/\\d+)?$`).exec(utility);
+    const colorUse = new RegExp(
+      `^(${COLOR_PREFIXES.join("|")})-([a-z][a-z-]*(?:-\\d+)?)(?:/\\d+)?$`,
+    ).exec(utility);
     if (colorUse) {
       const [, prefix, name] = colorUse;
       if (DEFAULT_PALETTE.test(name)) {
@@ -103,7 +114,11 @@ export function findViolations(source: string, tokens: TokenNames): string[] {
       }
       const isColor = tokens.colors.includes(name);
       if (prefix === "text") {
-        if (!isColor && !tokens.textSizes.includes(name) && !TEXT_KEYWORDS.has(name)) {
+        if (
+          !isColor &&
+          !tokens.textSizes.includes(name) &&
+          !TEXT_KEYWORDS.has(name)
+        ) {
           problems.push(`"${token}" is neither a colour nor a size token`);
         }
       } else if (!isColor && !NON_COLOR_WORDS.has(name) && !/^\d/.test(name)) {
@@ -116,15 +131,38 @@ export function findViolations(source: string, tokens: TokenNames): string[] {
 
 /** Words after a colour prefix that are layout or image tokens, not colours (`border-s`, `bg-dawn`). */
 const NON_COLOR_WORDS = new Set([
-  "s", "e", "t", "b", "l", "r", "x", "y", "solid", "dashed", "dotted", "none", "transparent",
-  "inherit", "current", "dawn", "horizon", "portrait-fade", "no-repeat", "repeat", "cover", "contain", "center",
+  "s",
+  "e",
+  "t",
+  "b",
+  "l",
+  "r",
+  "x",
+  "y",
+  "solid",
+  "dashed",
+  "dotted",
+  "none",
+  "transparent",
+  "inherit",
+  "current",
+  "dawn",
+  "horizon",
+  "portrait-fade",
+  "no-repeat",
+  "repeat",
+  "cover",
+  "contain",
+  "center",
 ]);
 
 /** Colour tokens used as `text-*` in a source file, for the contrast check. */
 export function textColorsUsed(source: string, colors: string[]): Set<string> {
   const used = new Set<string>();
   for (const token of utilityTokens(source)) {
-    const name = /^text-([a-z][a-z-]*)$/.exec(token.split(":").pop() ?? "")?.[1];
+    const name = /^text-([a-z][a-z-]*)$/.exec(
+      token.split(":").pop() ?? "",
+    )?.[1];
     if (name && colors.includes(name)) used.add(name);
   }
   return used;

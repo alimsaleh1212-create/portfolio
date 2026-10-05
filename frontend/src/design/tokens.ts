@@ -30,6 +30,8 @@ export function readTokens(): Map<string, string> {
 /** Names of tokens in a namespace, e.g. `names("--color-")` gives `["ground", "ink", ...]`. */
 export function names(prefix: string): string[] {
   return [...readTokens().keys()]
-    .filter((key) => key.startsWith(prefix) && !key.includes("--", prefix.length))
+    .filter(
+      (key) => key.startsWith(prefix) && !key.includes("--", prefix.length),
+    )
     .map((key) => key.slice(prefix.length));
 }
