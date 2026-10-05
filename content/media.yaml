@@ -1,0 +1,18 @@
+# Which file in the media folder plays which role. The files themselves are not
+# in the repository (see README, "Media"); a role whose file is absent is left
+# out of the site. Names are bare file names, looked up in MEDIA_DIR.
+
+portrait:
+  file: Ali_Saleh-avatar.jpg
+  alt: Ali Saleh, a man with short dark hair and a full beard, smiling slightly, in a stone-coloured polo shirt in front of green ivy.
+
+video_cv:
+  file: Ali_Saleh_CV.MOV
+  alt: Video introduction from Ali Saleh, spoken in English.
+  # A frame showing him facing the camera, without on-screen text.
+  poster_seconds: 42
+
+cv_pdf:
+  file: Ali_Saleh_CV_AI_Development_Specialist.pdf
+  # The name the browser saves the download under.
+  download_name: Ali_Saleh_CV.pdf
