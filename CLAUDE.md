@@ -16,6 +16,7 @@ All Compose commands run from the repo root. Copy `.env.example` to `.env` first
 - Backend lint and types (host, in `backend/`): `uv run ruff check . && uv run ruff format --check . && uv run pyright`
 - Frontend lint and types (in `frontend/`): `npm run lint && npm run typecheck`
 - The frontend uses npm.
+- CI (`.github/workflows/ci.yml`) runs on pull requests and pushes to `main` as three parallel jobs: backend lint and types, backend tests (the same Compose command as above, with `.env` copied from `.env.example`), and frontend lint, types, tests and build.
 
 ## Architecture
 
