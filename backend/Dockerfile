@@ -5,17 +5,19 @@ ENV UV_PROJECT_ENVIRONMENT=/opt/venv \
     PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
+RUN useradd --system --no-create-home app
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 FROM base AS dev
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen
 COPY . .
+# Non-root, so a bind-mounted ./backend never gets root-owned files.
+USER app
 CMD ["python", "-m", "app.serve"]
 
 FROM base AS prod
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev
 COPY . .
-RUN useradd --system --no-create-home app
 USER app
 CMD ["python", "-m", "app.serve"]

@@ -32,18 +32,18 @@ Stop with `docker compose down`; add `-v` to also delete the data volumes.
 Hot reload for the API (uvicorn `--reload`, `backend/` mounted) and the frontend (Vite dev server behind Caddy, `frontend/` mounted):
 
 ```sh
-docker compose -f compose.yaml -f compose.dev.yaml up -d --wait
+docker compose -f compose.yaml -f compose.dev.yaml up -d --build --wait
 ```
 
-The first start runs `npm ci` inside the frontend container, which takes a few minutes. Same URL as above.
+Same URL as above. Dev images are named separately from the production ones, and `--build` picks up dependency changes (the first build installs npm packages and takes a few minutes).
 
 ## Tests and checks
 
 Backend integration tests run against the real Postgres, Redis and MinIO, so they run inside the dev stack's network (nothing is published on the host). Compose starts the dependencies for you:
 
 ```sh
-docker compose -f compose.yaml -f compose.dev.yaml run --rm api pytest
-docker compose -f compose.yaml -f compose.dev.yaml run --rm api pytest tests/test_health.py::test_live_reports_ok
+docker compose -f compose.yaml -f compose.dev.yaml run --build --rm api pytest
+docker compose -f compose.yaml -f compose.dev.yaml run --build --rm api pytest tests/test_health.py::test_live_reports_ok
 ```
 
 Backend lint and types run on the host with uv (`cd backend`):

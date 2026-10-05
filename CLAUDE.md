@@ -9,13 +9,13 @@ Work is tracked in GitHub Issues. The milestone 1 spec is #1 and its tickets are
 All Compose commands run from the repo root. Copy `.env.example` to `.env` first.
 
 - Run the stack: `docker compose up -d --build --wait`, then <http://localhost:8080> (`CADDY_PORT`). Stop with `docker compose down` (`-v` deletes data).
-- Dev mode (hot reload for API and frontend): `docker compose -f compose.yaml -f compose.dev.yaml up -d --wait`. The first start runs `npm ci` in the container and is slow.
-- Backend tests (real Postgres, Redis, MinIO, so run inside Compose): `docker compose -f compose.yaml -f compose.dev.yaml run --rm api pytest`
-- One backend test: `... run --rm api pytest tests/test_health.py::test_live_reports_ok`
+- Dev mode (hot reload for API and frontend): `docker compose -f compose.yaml -f compose.dev.yaml up -d --build --wait`. Dev images are separate from prod ones; `--build` picks up dependency changes.
+- Backend tests (real Postgres, Redis, MinIO, so run inside Compose): `docker compose -f compose.yaml -f compose.dev.yaml run --build --rm api pytest`
+- One backend test: `... run --build --rm api pytest tests/test_health.py::test_live_reports_ok`
 - Frontend tests: `cd frontend && npm test`. One test: `npx vitest run src/ReadinessPage.test.tsx -t "unreachable"`
 - Backend lint and types (host, in `backend/`): `uv run ruff check . && uv run ruff format --check . && uv run pyright`
 - Frontend lint and types (in `frontend/`): `npm run lint && npm run typecheck`
-- Use npm, not pnpm (pnpm is broken on this machine).
+- The frontend uses npm.
 
 ## Architecture
 
