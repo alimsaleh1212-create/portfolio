@@ -183,7 +183,10 @@ function SummaryContent({
                   <li key={project.slug} className="py-8 first:pt-0">
                     <article>
                       <h3 className="text-lg font-semibold">
-                        <Link to={`/projects/${project.slug}`} className="link">
+                        <Link
+                          to={`/projects/${project.slug}`}
+                          className="link-heading"
+                        >
                           {project.name}
                         </Link>
                       </h3>

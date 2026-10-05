@@ -198,6 +198,20 @@
   }
 }
 
+/* A link inside a heading: keeps the ink colour, so accent stays for figures and calls to act. */
+@utility link-heading {
+  text-decoration-line: underline;
+  text-decoration-color: var(--color-line-strong);
+  text-underline-offset: var(--underline-offset);
+  transition-property: color, text-decoration-color;
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      color: var(--color-accent-hover);
+      text-decoration-color: currentColor;
+    }
+  }
+}
+
 /*
  * Tall viewports. A media query cannot read a token, so the threshold is written
  * here (the one literal allowed outside @theme): the identity column sticks only

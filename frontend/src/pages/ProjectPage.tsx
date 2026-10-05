@@ -65,7 +65,10 @@ function ProjectContent({
         </div>
 
         <div className="max-w-page mx-auto mt-10 md:mt-14">
-          <h1 className="text-display max-w-measure font-semibold tracking-tight">
+          <h1
+            translate="no"
+            className="text-display max-w-measure font-semibold tracking-tight"
+          >
             {project.name}
           </h1>
           <p className="text-ink-muted mt-4 max-w-measure text-lg leading-snug">
@@ -171,7 +174,10 @@ function NeighbourLink({
           </>
         )}
       </span>
-      <span className="text-ink group-hover:text-accent mt-1 block text-lg font-semibold transition-colors">
+      <span
+        translate="no"
+        className="text-ink group-hover:text-accent mt-1 block text-lg font-semibold transition-colors"
+      >
         {project.name}
       </span>
     </Link>
