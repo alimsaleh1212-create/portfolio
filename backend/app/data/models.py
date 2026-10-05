@@ -71,4 +71,4 @@ class ProjectRow(Base):
     tagline: Mapped[str] = mapped_column(Text)
     description: Mapped[str] = mapped_column(Text)
     stack: Mapped[list[str]] = mapped_column(ARRAY(Text))
-    metrics: Mapped[list[str]] = mapped_column(ARRAY(Text))
+    metrics: Mapped[list[dict[str, str]]] = mapped_column(JSONB)

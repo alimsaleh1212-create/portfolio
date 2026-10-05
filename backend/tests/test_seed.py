@@ -31,7 +31,7 @@ def test_seed_loads_profile_stages_and_projects(
     profile = fetch_all(empty_database_url, "SELECT * FROM profile")
     assert [row["key"] for row in stages] == ["trailhead", "ridge"]
     assert [row["slug"] for row in projects] == ["alpha", "beta"]
-    assert projects[0]["metrics"] == ["95% recall"]
+    assert projects[0]["metrics"] == [{"value": "95%", "label": "recall"}]
     assert profile[0]["data"]["name"] == "Test Person"
 
 

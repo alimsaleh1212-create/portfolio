@@ -32,7 +32,7 @@ Stop with `docker compose down`; add `-v` to also delete the data volumes.
 
 ## Content and the seed command
 
-All copy lives in `content/` and comes from Ali's CV: first person, with roles, dates and metrics as the CV has them. Each file is validated against a schema (`backend/app/content/schema.py`).
+All copy lives in `content/` and comes from Ali's CV: first person, with roles, dates and metrics as the CV has them (a metric is a `value` and a `label`). Each file is validated against a schema (`backend/app/content/schema.py`).
 
 A one-shot `seed` service loads the files into Postgres at startup, after migrations and before the API starts, so a fresh stack always has content. Run it by hand with:
 

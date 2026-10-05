@@ -98,6 +98,15 @@ class StagesFile(ContentModel):
     stages: list[StageContent]
 
 
+class Metric(ContentModel):
+    """One figure from the CV, split into the number and what it measures."""
+
+    value: Text
+    """The figure as the CV words it, such as `92%` or `above 90%`."""
+    label: Text
+    """What the figure measures, such as `classification accuracy`."""
+
+
 class Project(ContentModel):
     """One Project; also an item of the Project endpoints' responses."""
 
@@ -106,7 +115,7 @@ class Project(ContentModel):
     tagline: Text
     description: Text
     stack: list[Text]
-    metrics: list[Text]
+    metrics: list[Metric]
 
 
 class ProjectsFile(ContentModel):

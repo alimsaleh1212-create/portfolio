@@ -1,5 +1,6 @@
 # The six Projects, in the CV's order. The tagline is the CV's own subtitle.
-# Metrics are quoted from the CV, word for word; a Project with no figure has none listed.
+# A metric is a value and a label, both in the CV's own words (the value is the
+# figure, the label says what it measures). A Project with no figure has none listed.
 projects:
   - slug: agentic-coding-workflow-automation
     name: Agentic Coding Workflow Automation
@@ -23,7 +24,7 @@ projects:
       repeatable AI workflows covering data exploration, cleaning, feature
       engineering, model training, FastAPI serving and Python guidelines.
     stack: [Claude Skills, FastAPI]
-    metrics: [six Claude Skills]
+    metrics: []
   - slug: drift-triage-co-pilot
     name: Drift Triage Co-Pilot
     tagline: Self-healing MLOps platform
@@ -32,7 +33,9 @@ projects:
       data drift (PSI / chi²) and orchestrates retraining and rollback through
       an idempotent Redis queue, sustaining model accuracy above 90%.
     stack: [LangGraph, Redis]
-    metrics: [model accuracy above 90%]
+    metrics:
+      - value: above 90%
+        label: model accuracy sustained
   - slug: argus
     name: Argus
     tagline: AI-driven security automation and response platform (capstone)
@@ -41,7 +44,9 @@ projects:
       response) with human-in-the-loop approvals and a React operations
       dashboard, cutting simulated threat-analysis time by over 80%.
     stack: [React]
-    metrics: [cutting simulated threat-analysis time by over 80%]
+    metrics:
+      - value: over 80%
+        label: cut in simulated threat-analysis time
   - slug: concierge
     name: Concierge
     tagline: Multi-tenant AI SaaS
@@ -50,7 +55,9 @@ projects:
       tool-calling agents with per-tenant isolation, blocking 100% of injection
       and cross-tenant queries in red-team CI.
     stack: [FastAPI, React, NeMo Guardrails]
-    metrics: [blocking 100% of injection and cross-tenant queries in red-team CI]
+    metrics:
+      - value: 100%
+        label: of injection and cross-tenant queries blocked in red-team CI
   - slug: maintainers-copilot
     name: Maintainer's Copilot
     tagline: Embeddable support chatbot
@@ -59,4 +66,6 @@ projects:
       fine-tuned classifier, reaching 92% classification accuracy under
       evaluation-gated CI.
     stack: [RAG]
-    metrics: [92% classification accuracy under evaluation-gated CI]
+    metrics:
+      - value: 92%
+        label: classification accuracy under evaluation-gated CI
