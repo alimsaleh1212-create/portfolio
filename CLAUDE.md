@@ -16,6 +16,10 @@ When the first code lands, replace this section with the real commands (run, tes
 - **Decisions**: `docs/adr/` records the choices a reader would otherwise undo, such as the 3D scene and anonymous Visitors.
 - **Frontend work**: load the `design-taste-frontend` and `emil-design-eng` skills before building UI, and audit finished UI with `web-design-guidelines`. Ali asked for these by name.
 
+## Models
+
+Sonnet implements and Opus reviews. When dispatching a subagent, set its model to match the work: `sonnet` to build a ticket, `opus` to review code.
+
 ## Source content (`my_docs/`)
 
 Site copy comes from these files and from Ali's own words. Reproduce roles, dates and metrics exactly as written (95% detection recall, 97% track purity, 92% classification accuracy, and so on).
