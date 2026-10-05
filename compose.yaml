@@ -29,8 +29,11 @@ services:
       timeout: 3s
       retries: 10
 
+  # MinIO's official images are no longer published (the Docker Hub and Quay
+  # repositories are gone or denied), so use Chainguard's maintained builds,
+  # pinned by digest. Both run as uid 65532 with the binary as entrypoint.
   minio:
-    image: quay.io/minio/minio:latest
+    image: cgr.dev/chainguard/minio@sha256:6a1d0b45c8669726bba580ced0bfa4cb9fdeed1ed636dfabd81d1577beb6937b
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?copy .env.example to .env}
@@ -54,20 +57,15 @@ services:
   # One-shot job: creates the media bucket, then exits. No healthcheck because
   # it is not a long-running service; dependants wait for successful completion.
   minio-init:
-    image: quay.io/minio/mc:latest
+    image: cgr.dev/chainguard/minio-client@sha256:b2bd7824d23d3e3b15bedd7e87fbc3be29d2e213307b4f901e4a1d92356dc20f
     depends_on:
       minio:
         condition: service_healthy
     environment:
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_BUCKET: ${MINIO_BUCKET:-portfolio-media}
-    entrypoint:
-      - sh
-      - -c
-      - >-
-        mc alias set local http://minio:9000 "$$MINIO_ACCESS_KEY" "$$MINIO_SECRET_KEY" &&
-        mc mb --ignore-existing "local/$$MINIO_BUCKET"
+      # mc reads this alias from the environment, so no shell is needed. The
+      # credentials sit in a URL, so keep them free of characters such as @ / :
+      MC_HOST_local: http://${MINIO_ACCESS_KEY}:${MINIO_SECRET_KEY}@minio:9000
+    command: ["mb", "--ignore-existing", "local/${MINIO_BUCKET:-portfolio-media}"]
     restart: "no"
 
   # One-shot job: applies Alembic migrations, then exits.
