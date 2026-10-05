@@ -43,11 +43,17 @@ export interface Profile {
   certifications: Certification[];
 }
 
+/** One figure from the CV: the number, and what it measures. */
+export interface Metric {
+  value: string;
+  label: string;
+}
+
 export interface Project {
   slug: string;
   name: string;
   tagline: string;
   description: string;
   stack: string[];
-  metrics: string[];
+  metrics: Metric[];
 }

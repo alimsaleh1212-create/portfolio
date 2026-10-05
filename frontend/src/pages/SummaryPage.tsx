@@ -150,12 +150,17 @@ function SummaryContent({ profile, projects }: { profile: Profile; projects: Pro
                       <p className="text-ink-muted mt-1">{project.tagline}</p>
                       <p className="max-w-measure mt-4">{project.description}</p>
                       {project.metrics.length > 0 && (
-                        <ul
-                          aria-label="Metrics"
-                          className="text-accent mt-4 space-y-1 font-mono text-sm"
-                        >
+                        <ul aria-label="Metrics" className="mt-5 space-y-2">
                           {project.metrics.map((metric) => (
-                            <li key={metric}>{metric}</li>
+                            <li
+                              key={metric.value}
+                              className="flex flex-wrap items-baseline gap-x-3 gap-y-0"
+                            >
+                              <span className="text-accent text-xl font-semibold tabular-nums">
+                                {metric.value}
+                              </span>{" "}
+                              <span className="max-w-measure">{metric.label}</span>
+                            </li>
                           ))}
                         </ul>
                       )}
@@ -183,7 +188,17 @@ function SummaryContent({ profile, projects }: { profile: Profile; projects: Pro
                   <div key={group.category} className="grid gap-3 py-5 first:pt-0 sm:grid-cols-3">
                     <dt className="text-ink-muted text-sm font-medium sm:pt-1">{group.category}</dt>
                     <dd className="sm:col-span-2">
-                      <TagList items={group.items} label={group.category} />
+                      <ul
+                        aria-label={group.category}
+                        translate="no"
+                        className="gap-x-8 sm:columns-2"
+                      >
+                        {group.items.map((item) => (
+                          <li key={item} className="break-inside-avoid py-1 leading-snug">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
                     </dd>
                   </div>
                 ))}
@@ -289,7 +304,7 @@ function SummaryError({ retry, retrying }: { retry: () => void; retrying: boolea
         <div role="alert" className="max-w-measure">
           <h1 className="text-2xl font-semibold tracking-snug">The summary did not load</h1>
           <p className="text-ink-muted mt-3">
-            I could not get the content from the server. Check your connection, then try again.
+            The content could not be loaded from the server. Check your connection, then try again.
           </p>
         </div>
         <Button onClick={retry} disabled={retrying} className="mt-6">

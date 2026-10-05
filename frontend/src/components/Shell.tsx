@@ -54,11 +54,9 @@ export function Shell() {
       <footer className="border-line text-ink-muted border-t px-gutter md:px-gutter-wide">
         <div className="max-w-page mx-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-6 text-sm">
           <p>Ali Saleh, AI development specialist.</p>
-          <nav aria-label="Footer">
-            <Link to="/status" className="link">
-              Site status
-            </Link>
-          </nav>
+          <a href="#main" className="link">
+            Back to top
+          </a>
         </div>
       </footer>
     </div>

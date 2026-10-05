@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { findViolations, type TokenNames } from "./rules";
-import { names, stylesheet, themeCss } from "./tokens";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+import { names, readTokens, stylesheet, themeCss } from "./tokens";
 
 const tokens: TokenNames = {
   colors: names("--color-"),
@@ -10,11 +13,14 @@ const tokens: TokenNames = {
 };
 
 // Every component and page source, as text. Tests and the design checks themselves are not components.
-const sources = import.meta.glob(["../**/*.{ts,tsx}", "!../**/*.test.{ts,tsx}", "!../design/**", "!../test/**"], {
-  query: "?raw",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
+const sources = import.meta.glob(
+  ["../**/*.{ts,tsx}", "!../**/*.test.{ts,tsx}", "!../design/**", "!../test/**"],
+  {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  },
+) as Record<string, string>;
 
 describe("the checker", () => {
   const bad: Array<[string, string]> = [
@@ -37,7 +43,8 @@ describe("the checker", () => {
   });
 
   it("accepts token utilities", () => {
-    const good = '<p className="text-ink bg-raised border-line text-lg hover:text-accent animate-rise px-gutter text-balance" />';
+    const good =
+      '<p className="text-ink bg-raised border-line text-lg hover:text-accent animate-rise px-gutter text-balance" />';
     expect(findViolations(good, tokens)).toEqual([]);
   });
 });
@@ -47,9 +54,12 @@ describe("components use tokens only", () => {
     expect(Object.keys(sources).length).toBeGreaterThan(5);
   });
 
-  it.each(Object.entries(sources))("%s has no literal colour, size, space or timing", (_path, source) => {
-    expect(findViolations(source, tokens)).toEqual([]);
-  });
+  it.each(Object.entries(sources))(
+    "%s has no literal colour, size, space or timing",
+    (_path, source) => {
+      expect(findViolations(source, tokens)).toEqual([]);
+    },
+  );
 });
 
 describe("the stylesheet uses tokens only", () => {
@@ -57,8 +67,28 @@ describe("the stylesheet uses tokens only", () => {
     const outside = stylesheet.replace(themeCss, "");
     const offending = outside
       .split("\n")
-      .filter((line) => !line.trim().startsWith("--") && !line.trim().startsWith("/*") && !line.trim().startsWith("*") && !line.includes("@import"))
+      .filter(
+        (line) =>
+          !line.trim().startsWith("--") &&
+          !line.trim().startsWith("/*") &&
+          !line.trim().startsWith("*") &&
+          !line.includes("@import"),
+      )
       .filter((line) => /#[0-9a-fA-F]{3,8}\b|\b\d*\.?\d+(px|ms|rem|em|s)\b/.test(line));
     expect(offending).toEqual([]);
+  });
+});
+
+describe("the favicon", () => {
+  it("is drawn only in palette colours (colour literals are allowed in an SVG asset if they match a token)", () => {
+    const svg = readFileSync(resolve(process.cwd(), "public/favicon.svg"), "utf8");
+    const palette = new Set(
+      [...readTokens()]
+        .filter(([key]) => key.startsWith("--color-"))
+        .map(([, value]) => value.toLowerCase()),
+    );
+    const used = [...svg.matchAll(/#[0-9a-fA-F]{6}\b/g)].map((match) => match[0].toLowerCase());
+    expect(used.length).toBeGreaterThan(0);
+    for (const hex of used) expect(palette).toContain(hex);
   });
 });

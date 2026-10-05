@@ -14,14 +14,17 @@ describe("Summary, loaded", () => {
     stubApi(answerWithContent);
     renderApp("/summary");
 
-    expect(await screen.findByRole("heading", { level: 1, name: profile.name })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: profile.name }),
+    ).toBeInTheDocument();
     expect(screen.getByText(profile.headline)).toBeInTheDocument();
     expect(screen.getByText(profile.summary)).toBeInTheDocument();
 
     for (const job of profile.experience) {
       expect(screen.getByRole("heading", { level: 3, name: job.role })).toBeInTheDocument();
       expect(screen.getByText(job.period)).toBeInTheDocument();
-      for (const highlight of job.highlights) expect(screen.getByText(highlight)).toBeInTheDocument();
+      for (const highlight of job.highlights)
+        expect(screen.getByText(highlight)).toBeInTheDocument();
     }
 
     expect(projects).toHaveLength(6);
@@ -29,8 +32,14 @@ describe("Summary, loaded", () => {
       expect(screen.getByRole("heading", { level: 3, name: project.name })).toBeInTheDocument();
       expect(screen.getByText(project.tagline)).toBeInTheDocument();
       expect(screen.getByText(project.description)).toBeInTheDocument();
-      // Metrics are shown exactly as the CV words them.
-      for (const metric of project.metrics) expect(screen.getByText(metric)).toBeInTheDocument();
+      // Each metric is a value and a label, read together by a screen reader.
+      for (const metric of project.metrics) {
+        expect(screen.getByText(metric.value)).toBeInTheDocument();
+        expect(screen.getByText(metric.label)).toBeInTheDocument();
+        expect(screen.getByText(metric.value).closest("li")).toHaveTextContent(
+          `${metric.value} ${metric.label}`,
+        );
+      }
       const stack = screen.getByRole("list", { name: `${project.name} stack` });
       for (const item of project.stack) expect(within(stack).getByText(item)).toBeInTheDocument();
     }
@@ -54,10 +63,9 @@ describe("Summary, loaded", () => {
       "href",
       `mailto:${profile.links.email}`,
     );
-    expect(within(contact).getByRole("link", { name: "linkedin.com/in/ali-example" })).toHaveAttribute(
-      "href",
-      profile.links.linkedin,
-    );
+    expect(
+      within(contact).getByRole("link", { name: "linkedin.com/in/ali-example" }),
+    ).toHaveAttribute("href", profile.links.linkedin);
     expect(within(contact).getByRole("link", { name: "github.com/ali-example" })).toHaveAttribute(
       "href",
       profile.links.github,
@@ -96,7 +104,9 @@ describe("Summary, error", () => {
     up = true;
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
 
-    expect(await screen.findByRole("heading", { level: 1, name: profile.name })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: profile.name }),
+    ).toBeInTheDocument();
   });
 
   it("shows the error when the network fails", async () => {

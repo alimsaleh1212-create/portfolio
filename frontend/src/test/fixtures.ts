@@ -31,7 +31,12 @@ export const profile: Profile = {
     },
   ],
   education: [
-    { title: "M.Sc., Management Information Systems", institution: "Lebanese University", location: "Lebanon", year: "2018" },
+    {
+      title: "M.Sc., Management Information Systems",
+      institution: "Lebanese University",
+      location: "Lebanon",
+      year: "2018",
+    },
   ],
   certifications: [{ title: "Agent Skills with Anthropic", issuer: "DeepLearning.AI" }],
 };
@@ -51,7 +56,7 @@ export const projects: Project[] = [
     tagline: "Reusable AI workflows for a team",
     description: "I built six Claude Skills.",
     stack: ["FastAPI"],
-    metrics: ["six Claude Skills"],
+    metrics: [],
   },
   {
     slug: "three",
@@ -59,7 +64,7 @@ export const projects: Project[] = [
     tagline: "Self-healing MLOps platform",
     description: "I developed a supervisor agent.",
     stack: ["LangGraph", "Redis"],
-    metrics: ["model accuracy above 90%"],
+    metrics: [{ value: "above 90%", label: "model accuracy sustained" }],
   },
   {
     slug: "four",
@@ -67,7 +72,7 @@ export const projects: Project[] = [
     tagline: "Security automation (capstone)",
     description: "I built a multi-agent pipeline.",
     stack: ["FastAPI"],
-    metrics: ["cutting simulated threat-analysis time by over 80%"],
+    metrics: [{ value: "over 80%", label: "cut in simulated threat-analysis time" }],
   },
   {
     slug: "five",
@@ -75,7 +80,9 @@ export const projects: Project[] = [
     tagline: "Multi-tenant AI SaaS",
     description: "I built a tenant-aware assistant.",
     stack: ["Postgres"],
-    metrics: ["blocking 100% of injection and cross-tenant queries in red-team CI"],
+    metrics: [
+      { value: "100%", label: "of injection and cross-tenant queries blocked in red-team CI" },
+    ],
   },
   {
     slug: "six",
@@ -83,6 +90,6 @@ export const projects: Project[] = [
     tagline: "Embeddable support chatbot",
     description: "I built a support chatbot.",
     stack: ["RAG"],
-    metrics: ["92% classification accuracy under evaluation-gated CI"],
+    metrics: [{ value: "92%", label: "classification accuracy under evaluation-gated CI" }],
   },
 ];
