@@ -19,17 +19,25 @@ export class ApiError extends Error {
 export async function getJson<T>(path: string): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${API_ROOT}${path}`, { headers: { Accept: "application/json" } });
+    response = await fetch(`${API_ROOT}${path}`, {
+      headers: { Accept: "application/json" },
+    });
   } catch {
     throw new ApiError("The server could not be reached.");
   }
   if (!response.ok) {
-    throw new ApiError(`The server answered with status ${response.status}.`, response.status);
+    throw new ApiError(
+      `The server answered with status ${response.status}.`,
+      response.status,
+    );
   }
   try {
     return (await response.json()) as T;
   } catch {
-    throw new ApiError("The server sent an answer that could not be read.", response.status);
+    throw new ApiError(
+      "The server sent an answer that could not be read.",
+      response.status,
+    );
   }
 }
 
@@ -54,7 +62,12 @@ export const mediaQuery = queryOptions({
 export function createQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
-      queries: { retry: 1, retryDelay: 600, staleTime: Infinity, refetchOnWindowFocus: false },
+      queries: {
+        retry: 1,
+        retryDelay: 600,
+        staleTime: Infinity,
+        refetchOnWindowFocus: false,
+      },
     },
   });
 }

@@ -25,8 +25,16 @@ export function Portrait({ item }: { item: MediaItem }) {
   return (
     <div className="relative w-48 lg:w-40">
       <picture>
-        <source type="image/avif" srcSet={srcSet(item.variants, "avif")} sizes={SIZES} />
-        <source type="image/webp" srcSet={srcSet(item.variants, "webp")} sizes={SIZES} />
+        <source
+          type="image/avif"
+          srcSet={srcSet(item.variants, "avif")}
+          sizes={SIZES}
+        />
+        <source
+          type="image/webp"
+          srcSet={srcSet(item.variants, "webp")}
+          sizes={SIZES}
+        />
         <img
           src={fallback.url}
           srcSet={srcSet(item.variants, "jpeg")}

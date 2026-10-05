@@ -6,7 +6,12 @@ import type { MediaItem, Profile, Project } from "./types";
 export type SummaryState =
   | { status: "loading" }
   | { status: "error"; retry: () => void; retrying: boolean }
-  | { status: "ready"; profile: Profile; projects: Project[]; media: MediaItem[] };
+  | {
+      status: "ready";
+      profile: Profile;
+      projects: Project[];
+      media: MediaItem[];
+    };
 
 /**
  * Everything the Summary shows: the profile, the six Projects and the media, as one

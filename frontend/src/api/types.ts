@@ -49,6 +49,12 @@ export interface Metric {
   label: string;
 }
 
+/** One picture on a Project page: alt text and variants shaped like the Portrait's. */
+export interface ProjectMedia {
+  alt: string | null;
+  variants: MediaVariant[];
+}
+
 export interface Project {
   slug: string;
   name: string;
@@ -56,6 +62,8 @@ export interface Project {
   description: string;
   stack: string[];
   metrics: Metric[];
+  /** The API sends no Project media yet; the page draws a gallery only when this has pictures. */
+  media?: ProjectMedia[];
 }
 
 export type MediaRole = "portrait" | "video_cv" | "cv_pdf";

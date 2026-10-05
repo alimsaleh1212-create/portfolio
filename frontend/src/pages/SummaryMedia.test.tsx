@@ -17,7 +17,9 @@ describe("Summary media", () => {
     stubWith(media);
     renderApp("/summary");
 
-    const image = await screen.findByRole("img", { name: portraitItem.alt ?? "" });
+    const image = await screen.findByRole("img", {
+      name: portraitItem.alt ?? "",
+    });
     expect(image).toHaveAttribute("width", "1280");
     expect(image).toHaveAttribute("height", "1344");
     const picture = image.closest("picture");
@@ -26,15 +28,22 @@ describe("Summary media", () => {
       "image/avif",
       "image/webp",
     ]);
-    expect(sources[0].getAttribute("srcset")).toContain("/media/portrait-w320-avif 320w");
-    expect(image.getAttribute("srcset")).toContain("/media/portrait-w1280-jpeg 1280w");
+    expect(sources[0].getAttribute("srcset")).toContain(
+      "/media/portrait-w320-avif 320w",
+    );
+    expect(image.getAttribute("srcset")).toContain(
+      "/media/portrait-w1280-jpeg 1280w",
+    );
   });
 
   it("shows the Video CV with controls and loads nothing until it is played", async () => {
     stubWith(media);
     renderApp("/summary");
 
-    const heading = await screen.findByRole("heading", { level: 2, name: "Video CV" });
+    const heading = await screen.findByRole("heading", {
+      level: 2,
+      name: "Video CV",
+    });
     const video = heading.closest("figure")?.querySelector("video");
     expect(video).toHaveAttribute("controls");
     expect(video).toHaveAttribute("preload", "none");
@@ -58,7 +67,10 @@ describe("Summary media", () => {
     stubWith(media);
     renderApp("/summary");
 
-    const heading = await screen.findByRole("heading", { level: 2, name: "Video CV" });
+    const heading = await screen.findByRole("heading", {
+      level: 2,
+      name: "Video CV",
+    });
     const video = heading.closest("figure")?.querySelector("video");
     expect(video).toHaveAttribute("src", "/media/video-720");
     expect(video).toHaveAttribute("poster", "/media/poster-w960-webp");
@@ -79,21 +91,30 @@ describe("Summary media", () => {
     ["Portrait", [videoItem, cvItem]],
     ["Video CV", [portraitItem, cvItem]],
     ["CV download", [portraitItem, videoItem]],
-  ])("leaves out the %s when it is absent, with nothing in its place", async (name, rest) => {
-    stubWith(rest);
-    renderApp("/summary");
+  ])(
+    "leaves out the %s when it is absent, with nothing in its place",
+    async (name, rest) => {
+      stubWith(rest);
+      renderApp("/summary");
 
-    await screen.findByRole("heading", { level: 1 });
-    expect(!!screen.queryByRole("img")).toBe(name !== "Portrait");
-    expect(!!screen.queryByRole("heading", { name: "Video CV" })).toBe(name !== "Video CV");
-    expect(!!screen.queryByRole("link", { name: /Download CV/ })).toBe(name !== "CV download");
-  });
+      await screen.findByRole("heading", { level: 1 });
+      expect(!!screen.queryByRole("img")).toBe(name !== "Portrait");
+      expect(!!screen.queryByRole("heading", { name: "Video CV" })).toBe(
+        name !== "Video CV",
+      );
+      expect(!!screen.queryByRole("link", { name: /Download CV/ })).toBe(
+        name !== "CV download",
+      );
+    },
+  );
 
   it("shows the whole page without media when there is none", async () => {
     stubWith([]);
     renderApp("/summary");
 
-    expect(await screen.findByRole("heading", { level: 1 })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1 }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
     expect(document.querySelector("video")).toBeNull();
     const contact = screen.getByRole("navigation", { name: "Contact" });
@@ -101,10 +122,16 @@ describe("Summary media", () => {
   });
 
   it("shows the page without media when the media request fails", async () => {
-    stubApi((path) => (path.endsWith("/media") ? json({ detail: "down" }, 500) : answerWithContent(path)));
+    stubApi((path) =>
+      path.endsWith("/media")
+        ? json({ detail: "down" }, 500)
+        : answerWithContent(path),
+    );
     renderApp("/summary");
 
-    expect(await screen.findByRole("heading", { level: 1 })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1 }),
+    ).toBeInTheDocument();
     expect(document.querySelector("video")).toBeNull();
   });
 });

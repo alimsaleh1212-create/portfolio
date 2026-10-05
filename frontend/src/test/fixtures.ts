@@ -1,10 +1,17 @@
-import type { MediaItem, MediaVariant, Profile, Project } from "../api/types";
+import type {
+  MediaItem,
+  MediaVariant,
+  Profile,
+  Project,
+  ProjectMedia,
+} from "../api/types";
 
 export const profile: Profile = {
   name: "Ali Saleh",
   headline: "AI Development Specialist | AI Automation, Agents & Integrations",
   location: "Beirut, Lebanon",
-  summary: "I am an AI engineer who builds and ships AI agents, automations and API integrations.",
+  summary:
+    "I am an AI engineer who builds and ships AI agents, automations and API integrations.",
   links: {
     email: "ali@example.com",
     linkedin: "https://linkedin.com/in/ali-example",
@@ -20,7 +27,10 @@ export const profile: Profile = {
       organization: "Kirelo (mini-soccer AI analytics startup)",
       location: "UAE",
       period: "Jun 2026 – Present",
-      highlights: ["I lead two engineers.", "I created a goal detection model at 95% recall."],
+      highlights: [
+        "I lead two engineers.",
+        "I created a goal detection model at 95% recall.",
+      ],
     },
     {
       role: "Backend Developer",
@@ -38,7 +48,9 @@ export const profile: Profile = {
       year: "2018",
     },
   ],
-  certifications: [{ title: "Agent Skills with Anthropic", issuer: "DeepLearning.AI" }],
+  certifications: [
+    { title: "Agent Skills with Anthropic", issuer: "DeepLearning.AI" },
+  ],
 };
 
 export const projects: Project[] = [
@@ -72,7 +84,9 @@ export const projects: Project[] = [
     tagline: "Security automation (capstone)",
     description: "I built a multi-agent pipeline.",
     stack: ["FastAPI"],
-    metrics: [{ value: "over 80%", label: "cut in simulated threat-analysis time" }],
+    metrics: [
+      { value: "over 80%", label: "cut in simulated threat-analysis time" },
+    ],
   },
   {
     slug: "five",
@@ -81,7 +95,10 @@ export const projects: Project[] = [
     description: "I built a tenant-aware assistant.",
     stack: ["Postgres"],
     metrics: [
-      { value: "100%", label: "of injection and cross-tenant queries blocked in red-team CI" },
+      {
+        value: "100%",
+        label: "of injection and cross-tenant queries blocked in red-team CI",
+      },
     ],
   },
   {
@@ -90,7 +107,12 @@ export const projects: Project[] = [
     tagline: "Embeddable support chatbot",
     description: "I built a support chatbot.",
     stack: ["RAG"],
-    metrics: [{ value: "92%", label: "classification accuracy under evaluation-gated CI" }],
+    metrics: [
+      {
+        value: "92%",
+        label: "classification accuracy under evaluation-gated CI",
+      },
+    ],
   },
 ];
 
@@ -119,7 +141,9 @@ export const portraitItem: MediaItem = {
   download_name: null,
   duration_seconds: null,
   variants: widths.flatMap((width) =>
-    formats.map((format) => image("image", format, "portrait", width, Math.round(width * 1.05))),
+    formats.map((format) =>
+      image("image", format, "portrait", width, Math.round(width * 1.05)),
+    ),
   ),
 };
 
@@ -148,7 +172,9 @@ export const videoItem: MediaItem = {
       height: 720,
     },
     ...[960, 1280].flatMap((width) =>
-      formats.map((format) => image("poster", format, "poster", width, (width * 9) / 16)),
+      formats.map((format) =>
+        image("poster", format, "poster", width, (width * 9) / 16),
+      ),
     ),
   ],
 };
@@ -172,3 +198,23 @@ export const cvItem: MediaItem = {
 };
 
 export const media: MediaItem[] = [portraitItem, videoItem, cvItem];
+
+/** Two pictures for a Project page, shaped like the Portrait's variants. */
+export const projectMedia: ProjectMedia[] = [
+  {
+    alt: "The operations dashboard showing three open alerts.",
+    variants: widths.flatMap((width) =>
+      formats.map((format) =>
+        image("image", format, "shot-one", width, Math.round(width * 0.6)),
+      ),
+    ),
+  },
+  {
+    alt: "The approval step with a pending action.",
+    variants: widths.flatMap((width) =>
+      formats.map((format) =>
+        image("image", format, "shot-two", width, Math.round(width * 0.6)),
+      ),
+    ),
+  },
+];

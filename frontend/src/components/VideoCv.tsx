@@ -30,7 +30,9 @@ function useSmallScreen(): boolean {
 export function VideoCv({ item }: { item: MediaItem }) {
   const small = useSmallScreen();
   const renditions = item.variants
-    .filter((variant) => variant.kind === "video" && variant.width && variant.height)
+    .filter(
+      (variant) => variant.kind === "video" && variant.width && variant.height,
+    )
     .sort((a, b) => (b.height ?? 0) - (a.height ?? 0));
   // Largest first: the big screen gets the first, the small one the smallest that is still HD-ish.
   const chosen = (small ? renditions.at(-1) : renditions[0]) ?? renditions[0];
@@ -62,7 +64,10 @@ export function VideoCv({ item }: { item: MediaItem }) {
         className="rounded-surface bg-raised mt-8 block h-auto w-full"
       />
       {item.duration_seconds !== null && (
-        <figcaption id="video-caption" className="text-ink-muted mt-3 font-mono text-sm">
+        <figcaption
+          id="video-caption"
+          className="text-ink-muted mt-3 font-mono text-sm"
+        >
           {item.alt ? `${item.alt} ` : ""}
           {formatDuration(item.duration_seconds)}.
         </figcaption>

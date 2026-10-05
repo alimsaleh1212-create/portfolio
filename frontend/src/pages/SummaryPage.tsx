@@ -1,3 +1,5 @@
+import { Link } from "react-router";
+
 import { findMedia } from "../api/media";
 import { Button } from "../components/Button";
 import { CvDownload } from "../components/CvDownload";
@@ -16,7 +18,8 @@ const SECTIONS = [
 ] as const;
 
 // Tighter top and bottom on wide screens, so the identity column fits the first screen.
-const pageClass = "px-gutter md:px-gutter-wide py-section md:py-section-wide lg:py-12";
+const pageClass =
+  "px-gutter md:px-gutter-wide py-section md:py-section-wide lg:py-12";
 const gridClass = "max-w-page mx-auto grid gap-x-16 gap-y-12 lg:grid-cols-12";
 const h2Class = "text-xl font-semibold tracking-snug";
 
@@ -29,7 +32,13 @@ export function SummaryPage() {
   if (state.status === "error") {
     return <SummaryError retry={state.retry} retrying={state.retrying} />;
   }
-  return <SummaryContent profile={state.profile} projects={state.projects} media={state.media} />;
+  return (
+    <SummaryContent
+      profile={state.profile}
+      projects={state.projects}
+      media={state.media}
+    />
+  );
 }
 
 function SummaryContent({
@@ -69,8 +78,12 @@ function SummaryContent({
           >
             {profile.name}
           </h1>
-          <p className="text-ink-muted mt-3 text-lg leading-snug">{profile.headline}</p>
-          <p className="text-ink-muted mt-2 font-mono text-sm">{profile.location}</p>
+          <p className="text-ink-muted mt-3 text-lg leading-snug">
+            {profile.headline}
+          </p>
+          <p className="text-ink-muted mt-2 font-mono text-sm">
+            {profile.location}
+          </p>
 
           <nav aria-label="Contact" className="mt-6">
             <ul className="space-y-3">
@@ -169,9 +182,18 @@ function SummaryContent({
                 {projects.map((project) => (
                   <li key={project.slug} className="py-8 first:pt-0">
                     <article>
-                      <h3 className="text-lg font-semibold">{project.name}</h3>
+                      <h3 className="text-lg font-semibold">
+                        <Link
+                          to={`/projects/${project.slug}`}
+                          className="link-heading"
+                        >
+                          {project.name}
+                        </Link>
+                      </h3>
                       <p className="text-ink-muted mt-1">{project.tagline}</p>
-                      <p className="max-w-measure mt-4">{project.description}</p>
+                      <p className="max-w-measure mt-4">
+                        {project.description}
+                      </p>
                       {project.metrics.length > 0 && (
                         <ul aria-label="Metrics" className="mt-5 space-y-2">
                           {project.metrics.map((metric) => (
@@ -182,13 +204,18 @@ function SummaryContent({
                               <span className="text-accent text-xl font-semibold tabular-nums">
                                 {metric.value}
                               </span>{" "}
-                              <span className="max-w-measure">{metric.label}</span>
+                              <span className="max-w-measure">
+                                {metric.label}
+                              </span>
                             </li>
                           ))}
                         </ul>
                       )}
                       <div className="mt-4">
-                        <TagList items={project.stack} label={`${project.name} stack`} />
+                        <TagList
+                          items={project.stack}
+                          label={`${project.name} stack`}
+                        />
                       </div>
                     </article>
                   </li>
@@ -208,8 +235,13 @@ function SummaryContent({
               </h2>
               <dl className="divide-line mt-8 divide-y">
                 {profile.skills.map((group) => (
-                  <div key={group.category} className="grid gap-3 py-5 first:pt-0 sm:grid-cols-3">
-                    <dt className="text-ink-muted text-sm font-medium sm:pt-1">{group.category}</dt>
+                  <div
+                    key={group.category}
+                    className="grid gap-3 py-5 first:pt-0 sm:grid-cols-3"
+                  >
+                    <dt className="text-ink-muted text-sm font-medium sm:pt-1">
+                      {group.category}
+                    </dt>
                     <dd className="sm:col-span-2">
                       <ul
                         aria-label={group.category}
@@ -217,7 +249,10 @@ function SummaryContent({
                         className="gap-x-8 sm:columns-2"
                       >
                         {group.items.map((item) => (
-                          <li key={item} className="break-inside-avoid py-1 leading-snug">
+                          <li
+                            key={item}
+                            className="break-inside-avoid py-1 leading-snug"
+                          >
                             {item}
                           </li>
                         ))}
@@ -243,7 +278,9 @@ function SummaryContent({
                   <li key={item.title}>
                     <div className="flex flex-wrap items-baseline justify-between gap-x-6">
                       <h3 className="font-semibold">{item.title}</h3>
-                      <p className="text-ink-muted font-mono text-sm tabular-nums">{item.year}</p>
+                      <p className="text-ink-muted font-mono text-sm tabular-nums">
+                        {item.year}
+                      </p>
                     </div>
                     <p className="text-ink-muted">
                       {item.institution}, {item.location}
@@ -254,7 +291,9 @@ function SummaryContent({
 
               {profile.certifications.length > 0 && (
                 <>
-                  <h3 className="mt-12 text-lg font-semibold">Certifications</h3>
+                  <h3 className="mt-12 text-lg font-semibold">
+                    Certifications
+                  </h3>
                   <ul className="mt-4 space-y-4">
                     {profile.certifications.map((cert) => (
                       <li key={cert.title}>
@@ -273,11 +312,23 @@ function SummaryContent({
   );
 }
 
-function ContactLink({ label, href, text }: { label: string; href: string; text: string }) {
+function ContactLink({
+  label,
+  href,
+  text,
+}: {
+  label: string;
+  href: string;
+  text: string;
+}) {
   return (
     <li>
       <span className="text-ink-muted block text-sm">{label}</span>
-      <a href={href} translate="no" className="link break-words font-mono text-sm">
+      <a
+        href={href}
+        translate="no"
+        className="link break-words font-mono text-sm"
+      >
         {text}
       </a>
     </li>
@@ -320,14 +371,23 @@ function SummarySkeleton() {
   );
 }
 
-function SummaryError({ retry, retrying }: { retry: () => void; retrying: boolean }) {
+function SummaryError({
+  retry,
+  retrying,
+}: {
+  retry: () => void;
+  retrying: boolean;
+}) {
   return (
     <div className={pageClass}>
       <div className="max-w-page mx-auto">
         <div role="alert" className="max-w-measure">
-          <h1 className="text-2xl font-semibold tracking-snug">The summary did not load</h1>
+          <h1 className="text-2xl font-semibold tracking-snug">
+            The summary did not load
+          </h1>
           <p className="text-ink-muted mt-3">
-            The content could not be loaded from the server. Check your connection, then try again.
+            The content could not be loaded from the server. Check your
+            connection, then try again.
           </p>
         </div>
         <Button onClick={retry} disabled={retrying} className="mt-6">

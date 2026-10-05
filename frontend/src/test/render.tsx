@@ -7,13 +7,18 @@ import { createQueryClient } from "../api/client";
 import { media, profile, projects } from "./fixtures";
 
 /** Stub `fetch` so each API path answers with the given handler's response. */
-export function stubApi(handler: (path: string) => Response | Promise<Response>) {
-  const fetchMock = vi.fn((input: RequestInfo | URL) => Promise.resolve(handler(String(input))));
+export function stubApi(
+  handler: (path: string) => Response | Promise<Response>,
+) {
+  const fetchMock = vi.fn((input: RequestInfo | URL) =>
+    Promise.resolve(handler(String(input))),
+  );
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
 
-export const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+export const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status });
 
 export function answerWithContent(path: string, available = media): Response {
   if (path.endsWith("/profile")) return json(profile);
@@ -25,7 +30,9 @@ export function answerWithContent(path: string, available = media): Response {
 /** Render the whole app at a URL, with a client that does not retry or wait. */
 export function renderApp(url: string) {
   const queryClient = createQueryClient();
-  queryClient.setDefaultOptions({ queries: { retry: false, staleTime: Infinity } });
+  queryClient.setDefaultOptions({
+    queries: { retry: false, staleTime: Infinity },
+  });
   return render(
     <MemoryRouter initialEntries={[url]}>
       <App queryClient={queryClient} />
