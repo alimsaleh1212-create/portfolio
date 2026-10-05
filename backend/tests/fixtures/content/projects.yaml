@@ -4,7 +4,9 @@ projects:
     tagline: First project
     description: I built Alpha.
     stack: [Python]
-    metrics: ["95% recall"]
+    metrics:
+      - value: 95%
+        label: recall
   - slug: beta
     name: Beta
     tagline: Second project

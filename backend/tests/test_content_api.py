@@ -67,7 +67,7 @@ def test_projects_come_in_the_content_order(seeded_client: TestClient) -> None:
         "tagline": "First project",
         "description": "I built Alpha.",
         "stack": ["Python"],
-        "metrics": ["95% recall"],
+        "metrics": [{"value": "95%", "label": "recall"}],
     }
 
 

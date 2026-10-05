@@ -56,6 +56,24 @@ def test_unknown_field_is_rejected(content_dir: Path) -> None:
         load_content(content_dir)
 
 
+def test_metric_needs_a_value_and_a_label(content_dir: Path) -> None:
+    edit(content_dir / "projects.yaml", "        label: recall\n", "")
+
+    with pytest.raises(ContentError, match=r"projects\.yaml.*label"):
+        load_content(content_dir)
+
+
+def test_metric_as_plain_text_is_rejected(content_dir: Path) -> None:
+    edit(
+        content_dir / "projects.yaml",
+        "      - value: 95%\n        label: recall\n",
+        '      - "95% recall"\n',
+    )
+
+    with pytest.raises(ContentError, match=r"projects\.yaml.*metrics"):
+        load_content(content_dir)
+
+
 def test_unknown_stage_key_is_rejected(content_dir: Path) -> None:
     edit(content_dir / "stages.yaml", "key: ridge", "key: summit")
 

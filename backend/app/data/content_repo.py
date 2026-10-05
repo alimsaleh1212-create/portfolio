@@ -113,7 +113,7 @@ async def _sync_projects(session: AsyncSession, projects: list[Project]) -> None
             "tagline": project.tagline,
             "description": project.description,
             "stack": project.stack,
-            "metrics": project.metrics,
+            "metrics": [metric.model_dump() for metric in project.metrics],
         }
         await session.execute(
             insert(ProjectRow)
