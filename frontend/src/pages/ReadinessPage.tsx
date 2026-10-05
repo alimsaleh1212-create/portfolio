@@ -30,7 +30,7 @@ export function ReadinessPage() {
      <div className="max-w-page mx-auto">
       <h1 className="text-2xl font-semibold tracking-snug">Site status</h1>
       <h2 className="text-ink-muted mt-4 text-lg">Readiness</h2>
-      {state.kind === "loading" && <p className="mt-2">Checking...</p>}
+      {state.kind === "loading" && <p className="mt-2">Checking…</p>}
       {state.kind === "unreachable" && (
         <p role="alert" className="mt-2 text-alert font-medium">
           API unreachable

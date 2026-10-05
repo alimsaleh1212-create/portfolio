@@ -143,6 +143,11 @@
   html {
     background-color: var(--color-ground);
     -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  a,
+  button {
+    touch-action: manipulation;
   }
   body {
     min-height: 100dvh;

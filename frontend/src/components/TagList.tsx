@@ -1,7 +1,7 @@
 /** A row of short labels, such as a Project's stack or a skill category's items. */
 export function TagList({ items, label }: { items: string[]; label: string }) {
   return (
-    <ul aria-label={label} className="flex flex-wrap gap-2">
+    <ul aria-label={label} translate="no" className="flex flex-wrap gap-2">
       {items.map((item) => (
         <li
           key={item}

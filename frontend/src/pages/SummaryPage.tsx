@@ -28,32 +28,56 @@ export function SummaryPage() {
 }
 
 function SummaryContent({ profile, projects }: { profile: Profile; projects: Project[] }) {
+  // A section with nothing in it is left out, along with its jump link.
+  const present = {
+    experience: profile.experience.length > 0,
+    projects: projects.length > 0,
+    skills: profile.skills.length > 0,
+    education: profile.education.length > 0,
+  };
   return (
     <div className={`relative animate-rise ${pageClass}`}>
       {/* First light behind the identity column, fading into night. */}
-      <div aria-hidden="true" className="bg-dawn pointer-events-none absolute inset-x-0 top-0 h-96" />
+      <div
+        aria-hidden="true"
+        className="bg-dawn pointer-events-none absolute inset-x-0 top-0 h-96"
+      />
       <div className={`relative ${gridClass}`}>
         {/* The identity column. The Portrait goes above the name and the CV download below the contact links (ticket #8). */}
         <aside className="lg:col-span-4 lg:sticky lg:top-8 lg:self-start">
-          <h1 className="text-display font-semibold tracking-tight">{profile.name}</h1>
+          <h1 translate="no" className="text-display font-semibold tracking-tight">
+            {profile.name}
+          </h1>
           <p className="text-ink-muted mt-4 text-lg leading-snug">{profile.headline}</p>
           <p className="text-ink-muted mt-2 font-mono text-sm">{profile.location}</p>
 
           <nav aria-label="Contact" className="mt-8">
-            <ul className="space-y-2">
-              <ContactLink label="Email" href={`mailto:${profile.links.email}`} text={profile.links.email} />
-              <ContactLink label="LinkedIn" href={profile.links.linkedin} text={displayUrl(profile.links.linkedin)} />
-              <ContactLink label="GitHub" href={profile.links.github} text={displayUrl(profile.links.github)} />
+            <ul className="space-y-4">
+              <ContactLink
+                label="Email"
+                href={`mailto:${profile.links.email}`}
+                text={profile.links.email}
+              />
+              <ContactLink
+                label="LinkedIn"
+                href={profile.links.linkedin}
+                text={displayUrl(profile.links.linkedin)}
+              />
+              <ContactLink
+                label="GitHub"
+                href={profile.links.github}
+                text={displayUrl(profile.links.github)}
+              />
             </ul>
           </nav>
 
-          <nav aria-label="On this page" className="mt-8 hidden lg:block">
-            <ul className="border-line space-y-1 border-s">
-              {SECTIONS.map(({ id, label }) => (
+          <nav aria-label="On this page" className="mt-8">
+            <ul className="border-line flex flex-wrap gap-x-5 gap-y-1 lg:block lg:space-y-1 lg:border-s">
+              {SECTIONS.filter(({ id }) => present[id]).map(({ id, label }) => (
                 <li key={id}>
                   <a
                     href={`#${id}`}
-                    className="text-ink-muted hover:text-ink -ms-px block border-s border-transparent py-1 ps-4 text-sm transition-colors hover:border-accent"
+                    className="text-ink-muted hover:text-ink block py-2 text-sm transition-colors lg:-ms-px lg:border-s lg:border-transparent lg:py-1 lg:ps-4 lg:hover:border-accent"
                   >
                     {label}
                   </a>
@@ -72,110 +96,139 @@ function SummaryContent({ profile, projects }: { profile: Profile; projects: Pro
           </section>
           {/* The Video CV goes here, between the summary and the experience (ticket #8). */}
 
-          <section id="experience" aria-labelledby="experience-heading" className="mt-section md:mt-section-wide scroll-mt-8">
-            <h2 id="experience-heading" className={h2Class}>
-              Experience
-            </h2>
-            <ol className="mt-8 space-y-12">
-              {profile.experience.map((job) => (
-                <li key={`${job.role}-${job.period}`}>
-                  <article>
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-                      <h3 className="text-lg font-semibold">{job.role}</h3>
-                      <p className="text-ink-muted font-mono text-sm">{job.period}</p>
-                    </div>
-                    <p className="text-ink-muted mt-1">
-                      {job.organization}
-                      {job.location ? `, ${job.location}` : ""}
-                    </p>
-                    <ul className="marker:text-accent mt-4 list-disc space-y-3 ps-5">
-                      {job.highlights.map((highlight) => (
-                        <li key={highlight} className="max-w-measure ps-1">
-                          {highlight}
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          <section id="projects" aria-labelledby="projects-heading" className="mt-section md:mt-section-wide scroll-mt-8">
-            <h2 id="projects-heading" className={h2Class}>
-              Projects
-            </h2>
-            <ul className="divide-line mt-8 divide-y">
-              {projects.map((project) => (
-                <li key={project.slug} className="py-8 first:pt-0">
-                  <article>
-                    <h3 className="text-lg font-semibold">{project.name}</h3>
-                    <p className="text-ink-muted mt-1">{project.tagline}</p>
-                    <p className="max-w-measure mt-4">{project.description}</p>
-                    {project.metrics.length > 0 && (
-                      <ul aria-label="Metrics" className="text-accent mt-4 space-y-1 font-mono text-sm">
-                        {project.metrics.map((metric) => (
-                          <li key={metric}>{metric}</li>
+          {present.experience && (
+            <section
+              id="experience"
+              aria-labelledby="experience-heading"
+              className="mt-section md:mt-section-wide scroll-mt-8"
+            >
+              <h2 id="experience-heading" className={h2Class}>
+                Experience
+              </h2>
+              <ol className="mt-8 space-y-12">
+                {profile.experience.map((job) => (
+                  <li key={`${job.role}-${job.period}`}>
+                    <article>
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+                        <h3 className="text-lg font-semibold">{job.role}</h3>
+                        <p className="text-ink-muted font-mono text-sm tabular-nums">
+                          {job.period}
+                        </p>
+                      </div>
+                      <p className="text-ink-muted mt-1">
+                        {job.organization}
+                        {job.location ? `, ${job.location}` : ""}
+                      </p>
+                      <ul className="marker:text-accent mt-4 list-disc space-y-3 ps-5">
+                        {job.highlights.map((highlight) => (
+                          <li key={highlight} className="max-w-measure ps-1">
+                            {highlight}
+                          </li>
                         ))}
                       </ul>
-                    )}
-                    <div className="mt-4">
-                      <TagList items={project.stack} label={`${project.name} stack`} />
-                    </div>
-                  </article>
-                </li>
-              ))}
-            </ul>
-          </section>
+                    </article>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
 
-          <section id="skills" aria-labelledby="skills-heading" className="mt-section md:mt-section-wide scroll-mt-8">
-            <h2 id="skills-heading" className={h2Class}>
-              Skills
-            </h2>
-            <dl className="divide-line mt-8 divide-y">
-              {profile.skills.map((group) => (
-                <div key={group.category} className="grid gap-3 py-5 first:pt-0 sm:grid-cols-3">
-                  <dt className="text-ink-muted text-sm font-medium sm:pt-1">{group.category}</dt>
-                  <dd className="sm:col-span-2">
-                    <TagList items={group.items} label={group.category} />
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </section>
+          {present.projects && (
+            <section
+              id="projects"
+              aria-labelledby="projects-heading"
+              className="mt-section md:mt-section-wide scroll-mt-8"
+            >
+              <h2 id="projects-heading" className={h2Class}>
+                Projects
+              </h2>
+              <ul className="divide-line mt-8 divide-y">
+                {projects.map((project) => (
+                  <li key={project.slug} className="py-8 first:pt-0">
+                    <article>
+                      <h3 className="text-lg font-semibold">{project.name}</h3>
+                      <p className="text-ink-muted mt-1">{project.tagline}</p>
+                      <p className="max-w-measure mt-4">{project.description}</p>
+                      {project.metrics.length > 0 && (
+                        <ul
+                          aria-label="Metrics"
+                          className="text-accent mt-4 space-y-1 font-mono text-sm"
+                        >
+                          {project.metrics.map((metric) => (
+                            <li key={metric}>{metric}</li>
+                          ))}
+                        </ul>
+                      )}
+                      <div className="mt-4">
+                        <TagList items={project.stack} label={`${project.name} stack`} />
+                      </div>
+                    </article>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-          <section id="education" aria-labelledby="education-heading" className="mt-section md:mt-section-wide scroll-mt-8">
-            <h2 id="education-heading" className={h2Class}>
-              Education
-            </h2>
-            <ul className="mt-8 space-y-6">
-              {profile.education.map((item) => (
-                <li key={item.title}>
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-6">
-                    <h3 className="font-semibold">{item.title}</h3>
-                    <p className="text-ink-muted font-mono text-sm">{item.year}</p>
+          {present.skills && (
+            <section
+              id="skills"
+              aria-labelledby="skills-heading"
+              className="mt-section md:mt-section-wide scroll-mt-8"
+            >
+              <h2 id="skills-heading" className={h2Class}>
+                Skills
+              </h2>
+              <dl className="divide-line mt-8 divide-y">
+                {profile.skills.map((group) => (
+                  <div key={group.category} className="grid gap-3 py-5 first:pt-0 sm:grid-cols-3">
+                    <dt className="text-ink-muted text-sm font-medium sm:pt-1">{group.category}</dt>
+                    <dd className="sm:col-span-2">
+                      <TagList items={group.items} label={group.category} />
+                    </dd>
                   </div>
-                  <p className="text-ink-muted">
-                    {item.institution}, {item.location}
-                  </p>
-                </li>
-              ))}
-            </ul>
+                ))}
+              </dl>
+            </section>
+          )}
 
-            {profile.certifications.length > 0 && (
-              <>
-                <h3 className="mt-12 text-lg font-semibold">Certifications</h3>
-                <ul className="mt-4 space-y-4">
-                  {profile.certifications.map((cert) => (
-                    <li key={cert.title}>
-                      <p className="font-semibold">{cert.title}</p>
-                      <p className="text-ink-muted">{cert.issuer}</p>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </section>
+          {present.education && (
+            <section
+              id="education"
+              aria-labelledby="education-heading"
+              className="mt-section md:mt-section-wide scroll-mt-8"
+            >
+              <h2 id="education-heading" className={h2Class}>
+                Education
+              </h2>
+              <ul className="mt-8 space-y-6">
+                {profile.education.map((item) => (
+                  <li key={item.title}>
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-6">
+                      <h3 className="font-semibold">{item.title}</h3>
+                      <p className="text-ink-muted font-mono text-sm tabular-nums">{item.year}</p>
+                    </div>
+                    <p className="text-ink-muted">
+                      {item.institution}, {item.location}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+
+              {profile.certifications.length > 0 && (
+                <>
+                  <h3 className="mt-12 text-lg font-semibold">Certifications</h3>
+                  <ul className="mt-4 space-y-4">
+                    {profile.certifications.map((cert) => (
+                      <li key={cert.title}>
+                        <p className="font-semibold">{cert.title}</p>
+                        <p className="text-ink-muted">{cert.issuer}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </section>
+          )}
         </div>
       </div>
     </div>
@@ -184,9 +237,9 @@ function SummaryContent({ profile, projects }: { profile: Profile; projects: Pro
 
 function ContactLink({ label, href, text }: { label: string; href: string; text: string }) {
   return (
-    <li className="flex flex-wrap items-baseline gap-x-3">
-      <span className="text-ink-muted w-20 shrink-0 text-sm">{label}</span>
-      <a href={href} className="link min-w-0 break-words font-mono text-sm">
+    <li>
+      <span className="text-ink-muted block text-sm">{label}</span>
+      <a href={href} translate="no" className="link break-words font-mono text-sm">
         {text}
       </a>
     </li>
@@ -204,7 +257,7 @@ function SummarySkeleton() {
   return (
     <div className={pageClass} aria-busy="true">
       <p role="status" className="sr-only">
-        Loading the summary
+        Loading the summary…
       </p>
       <div aria-hidden="true" className={gridClass}>
         <div className="lg:col-span-4">
@@ -240,7 +293,7 @@ function SummaryError({ retry, retrying }: { retry: () => void; retrying: boolea
           </p>
         </div>
         <Button onClick={retry} disabled={retrying} className="mt-6">
-          {retrying ? "Trying again" : "Try again"}
+          {retrying ? "Trying again…" : "Try again"}
         </Button>
       </div>
     </div>
