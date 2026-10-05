@@ -1,0 +1,48 @@
+# Development mode: `docker compose -f compose.yaml -f compose.dev.yaml up -d --wait`
+# Hot reload for the API (uvicorn --reload) and the frontend (Vite HMR).
+#
+# The dev images have their own names, so they never replace the production
+# ones. Dev containers run as non-root users and write nothing into the bind
+# mounts, so no root-owned files appear in the working tree. After changing
+# dependencies, add --build to rebuild the dev images.
+services:
+  migrate:
+    build:
+      target: dev
+    image: ali-portfolio-api-dev
+
+  api:
+    build:
+      target: dev
+    image: ali-portfolio-api-dev
+    environment:
+      RELOAD: "1"
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    image: ali-portfolio-frontend-dev
+    volumes:
+      # Only the source is mounted; node_modules stays inside the image.
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.ts:/app/vite.config.ts
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  caddy:
+    # Use the stock image with the dev Caddyfile instead of the baked build.
+    build: !reset null
+    image: caddy:2-alpine
+    volumes:
+      - ./infra/caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+    depends_on:
+      frontend:
+        condition: service_healthy

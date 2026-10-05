@@ -1,0 +1,55 @@
+[project]
+name = "portfolio-backend"
+version = "0.1.0"
+description = "API for Ali Saleh's portfolio site."
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi>=0.142.2",
+    "uvicorn>=0.54.0",
+    "pydantic-settings>=2.15.0",
+    "sqlalchemy[asyncio]>=2.1.3",
+    "asyncpg>=0.31.0",
+    "alembic>=1.20.0",
+    "redis>=8.1.0",
+    "boto3>=1.43.108",
+    "structlog>=26.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+    "pyright>=1.1.414",
+    "boto3-stubs[s3]>=1.43.108",
+    "httpx2>=2.13.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "S", "D", "N", "SIM"]
+ignore = ["D100", "D104", "D203", "D213"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "D"]
+"alembic/*" = ["D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pyright]
+include = ["app", "tests", "alembic"]
+pythonVersion = "3.13"
+typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The dev container may not own the bind-mounted tree, so keep it cache-free.
+addopts = "-p no:cacheprovider"

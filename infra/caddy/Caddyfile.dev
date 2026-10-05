@@ -1,0 +1,19 @@
+{
+	admin off
+	auto_https off
+}
+
+:80 {
+	handle /caddy-health {
+		respond "ok" 200
+	}
+
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	# Vite dev server, including its hot-reload websocket.
+	handle {
+		reverse_proxy frontend:5173
+	}
+}

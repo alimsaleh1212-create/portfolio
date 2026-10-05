@@ -1,0 +1,135 @@
+name: ali-portfolio
+
+x-backend-build: &backend-build
+  context: ./backend
+  target: prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?copy .env.example to .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?copy .env.example to .env}
+      POSTGRES_DB: ${POSTGRES_DB:?copy .env.example to .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # MinIO's official images are no longer published (the Docker Hub and Quay
+  # repositories are gone or denied), so use Chainguard's maintained builds,
+  # pinned by digest. Both run as uid 65532 with the binary as entrypoint.
+  minio:
+    image: cgr.dev/chainguard/minio@sha256:6a1d0b45c8669726bba580ced0bfa4cb9fdeed1ed636dfabd81d1577beb6937b
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?copy .env.example to .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?copy .env.example to .env}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      # The image has no curl or wget, so speak HTTP through bash.
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          printf 'GET /minio/health/live HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          read -r status <&3 && [[ $$status == *" 200 "* ]]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # One-shot job: creates the media bucket, then exits. No healthcheck because
+  # it is not a long-running service; dependants wait for successful completion.
+  minio-init:
+    image: cgr.dev/chainguard/minio-client@sha256:b2bd7824d23d3e3b15bedd7e87fbc3be29d2e213307b4f901e4a1d92356dc20f
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      # mc reads this alias from the environment, so no shell is needed. The
+      # credentials sit in a URL, so keep them free of characters such as @ / :
+      MC_HOST_local: http://${MINIO_ACCESS_KEY}:${MINIO_SECRET_KEY}@minio:9000
+    command: ["mb", "--ignore-existing", "local/${MINIO_BUCKET:-portfolio-media}"]
+    restart: "no"
+
+  # One-shot job: applies Alembic migrations, then exits.
+  migrate:
+    build: *backend-build
+    image: ali-portfolio-api
+    command: ["alembic", "upgrade", "head"]
+    environment: &api-environment
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET:-portfolio-media}
+      HEALTH_CHECK_TIMEOUT_SECONDS: ${HEALTH_CHECK_TIMEOUT_SECONDS:-2}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: *backend-build
+    image: ali-portfolio-api
+    environment: *api-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/live', timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Serves the built frontend (baked into the image) and proxies /api/ to the API.
+  caddy:
+    build:
+      context: .
+      dockerfile: infra/caddy/Dockerfile
+    image: ali-portfolio-caddy
+    ports:
+      - "${CADDY_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/caddy-health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
