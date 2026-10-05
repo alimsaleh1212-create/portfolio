@@ -4,7 +4,7 @@
 # Object keys are named by content hash, so a URL never changes meaning and a
 # response can be cached for good. Range requests pass through untouched, which
 # is what lets a browser stream and seek in the video.
-handle /media/* {
+handle_path /media/* {
 	# Reads only.
 	@writes not method GET HEAD OPTIONS
 	respond @writes "Method not allowed" 405
@@ -14,7 +14,7 @@ handle /media/* {
 	@query expression `{http.request.uri.query} != ""`
 	respond @query "Not found" 404
 
-	uri strip_prefix /media
+	# handle_path has already removed /media; put the bucket name in front.
 	rewrite * /{$MINIO_BUCKET}{path}
 
 	reverse_proxy minio:9000 {
@@ -27,10 +27,12 @@ handle /media/* {
 		header_down -X-Ratelimit-*
 		header_down -Strict-Transport-Security
 		header_down -X-Xss-Protection
-		header_down -X-Content-Type-Options
 
 		# Only successful answers are cached; a 404 for a not-yet-seeded key is not.
 		@found status 200 206
-		header_down @found Cache-Control "public, max-age=31536000, immutable"
+		handle_response @found {
+			header Cache-Control "public, max-age=31536000, immutable"
+			copy_response
+		}
 	}
 }
