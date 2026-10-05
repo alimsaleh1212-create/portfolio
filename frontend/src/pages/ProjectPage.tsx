@@ -6,6 +6,7 @@ import { Button } from "../components/Button";
 import { ProjectGallery } from "../components/ProjectGallery";
 import { TagList } from "../components/TagList";
 import { usePageTitle } from "../usePageTitle";
+import { useProjectOpened } from "../visit/useProjectOpened";
 
 const pageClass =
   "px-gutter md:px-gutter-wide py-section md:py-section-wide lg:py-12";
@@ -26,6 +27,8 @@ export function ProjectPage() {
           ? "Project did not load"
           : "Loading project";
   usePageTitle(title);
+  // Only a Project that exists counts as opened, not an unknown address.
+  useProjectOpened(state.status === "ready" ? state.project.slug : undefined);
 
   if (state.status === "loading") return <ProjectSkeleton />;
   if (state.status === "error")
