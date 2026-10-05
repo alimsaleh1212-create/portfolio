@@ -5,34 +5,50 @@
 # response can be cached for good. Range requests pass through untouched, which
 # is what lets a browser stream and seek in the video.
 handle_path /media/* {
-	# Reads only.
-	@writes not method GET HEAD OPTIONS
-	respond @writes "Method not allowed" 405
+	# route keeps the steps below in the order they are written.
+	route {
+		# Reads only.
+		@writes not method GET HEAD OPTIONS
+		respond @writes "Method not allowed" 405
 
-	# Media addresses have no query string; refuse one rather than forward
-	# bucket-level S3 queries (listing, versions) to MinIO.
-	@query expression `{http.request.uri.query} != ""`
-	respond @query "Not found" 404
+		# Keys are flat names: letters, digits, dot, dash and underscore, no folders.
+		# The path has already lost /media here. Anything else is a plain 404 and
+		# is never forwarded to MinIO.
+		@badpath not path_regexp ^/[A-Za-z0-9_-][A-Za-z0-9._-]*$
+		respond @badpath "Not found" 404
 
-	# handle_path has already removed /media; put the bucket name in front.
-	rewrite * /{$MINIO_BUCKET}{path}
+		# Media addresses have no query string; refuse one rather than forward
+		# bucket-level S3 queries (listing, versions) to MinIO.
+		@query expression `{http.request.uri.query} != ""`
+		respond @query "Not found" 404
 
-	reverse_proxy minio:9000 {
-		header_up Host {upstream_hostport}
+		# handle_path has already removed /media; put the bucket name in front.
+		rewrite * /{$MINIO_BUCKET}{path}
 
-		# Do not leak what MinIO is, its version of the S3 API or its ids.
-		header_down -Server
-		header_down -X-Amz-*
-		header_down -X-Minio-*
-		header_down -X-Ratelimit-*
-		header_down -Strict-Transport-Security
-		header_down -X-Xss-Protection
+		reverse_proxy minio:9000 {
+			header_up Host {upstream_hostport}
 
-		# Only successful answers are cached; a 404 for a not-yet-seeded key is not.
-		@found status 200 206
-		handle_response @found {
-			header Cache-Control "public, max-age=31536000, immutable"
-			copy_response
+			# Do not leak what MinIO is, its version of the S3 API or its ids.
+			header_down -Server
+			header_down -X-Amz-*
+			header_down -X-Minio-*
+			header_down -X-Ratelimit-*
+			header_down -Strict-Transport-Security
+			header_down -X-Xss-Protection
+
+			# Successful answers (and "not modified") are cached for good and passed on.
+			@found status 200 206 304
+			handle_response @found {
+				header Cache-Control "public, max-age=31536000, immutable"
+				copy_response
+			}
+
+			# Every error, MinIO's XML ones included, becomes a plain 404 with no
+			# upstream body and no cache header.
+			@failed status 4xx 5xx
+			handle_response @failed {
+				respond "Not found" 404
+			}
 		}
 	}
 }
