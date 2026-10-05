@@ -6,13 +6,15 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import APIRouter, FastAPI
 
-from app.api.v1 import health
+from app.api.v1 import content, health
 from app.config import Settings, get_settings
 from app.data.cache import RedisProbe, create_redis
-from app.data.db import PostgresProbe, create_engine
+from app.data.content_repo import ContentRepository
+from app.data.db import PostgresProbe, create_engine, create_session_factory
 from app.data.storage import MinioProbe, create_s3_client
 from app.logging import configure_logging
 from app.middleware import RequestIdMiddleware
+from app.services.content import ContentService
 from app.services.health import HealthService, Probe
 
 logger = structlog.get_logger(__name__)
@@ -47,6 +49,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "minio": MinioProbe(s3, settings.minio_bucket),
         }
         app.state.health_service = HealthService(probes, timeout)
+        app.state.content_service = ContentService(
+            ContentRepository(create_session_factory(engine))
+        )
         logger.info("startup_complete")
         yield
         await engine.dispose()
@@ -59,5 +64,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     api_v1 = APIRouter(prefix="/api/v1")
     api_v1.include_router(health.router)
+    api_v1.include_router(content.router)
     app.include_router(api_v1)
     return app

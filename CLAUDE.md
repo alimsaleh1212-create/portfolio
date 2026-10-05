@@ -12,6 +12,7 @@ All Compose commands run from the repo root. Copy `.env.example` to `.env` first
 - Dev mode (hot reload for API and frontend): `docker compose -f compose.yaml -f compose.dev.yaml up -d --build --wait`. Dev images are separate from prod ones; `--build` picks up dependency changes.
 - Backend tests (real Postgres, Redis, MinIO, so run inside Compose): `docker compose -f compose.yaml -f compose.dev.yaml run --build --rm api pytest`
 - One backend test: `... run --build --rm api pytest tests/test_health.py::test_live_reports_ok`
+- Seed content by hand (the stack runs it at startup, non-strict): `docker compose run --rm seed python -m app.seed`. Add `--strict` to fail while any `PLACEHOLDER:` remains. In dev mode, add `-f compose.yaml -f compose.dev.yaml` before `run`.
 - Frontend tests: `cd frontend && npm test`. One test: `npx vitest run src/ReadinessPage.test.tsx -t "unreachable"`
 - Backend lint and types (host, in `backend/`): `uv run ruff check . && uv run ruff format --check . && uv run pyright`
 - Frontend lint and types (in `frontend/`): `npm run lint && npm run typecheck`
@@ -20,9 +21,12 @@ All Compose commands run from the repo root. Copy `.env.example` to `.env` first
 
 ## Architecture
 
-Caddy is the only published port. It serves the built frontend (baked into its image) and proxies `/api/` to FastAPI. In dev mode it proxies `/` to the Vite dev server instead. Postgres, Redis and MinIO are internal. Two one-shot services run at startup: `migrate` (Alembic) and `minio-init` (creates the bucket).
+Caddy is the only published port. It serves the built frontend (baked into its image) and proxies `/api/` to FastAPI. In dev mode it proxies `/` to the Vite dev server instead. Postgres, Redis and MinIO are internal. Three one-shot services run at startup: `migrate` (Alembic), `seed` (after `migrate`; the API waits for it) and `minio-init` (creates the bucket).
 
 - `backend/app/`: `api/v1/` routes call `services/`, which use probes and clients from `data/`. `deps.py` wires them with FastAPI dependency injection; `main.create_app` builds the clients at startup. Settings come from environment variables only (`config.py`).
+- Content: `content/*.yaml` (profile, Stages, Projects) is mounted read-only at `CONTENT_DIR` (`/content`). `app/content/` validates it (`schema.py`, `loader.py`); `app/seed.py` loads it through `ContentRepository.sync`, which upserts on Stage key / Project slug and deletes rows missing from the files. Position is the file order. The profile is one JSONB row; Stages and Projects are tables. Alembic revision `0002` holds the schema.
+- A Challenge written as `PLACEHOLDER: text` is stored without the marker plus `challenge_is_placeholder`. Strict seed lists every `PLACEHOLDER:` in any text field and loads nothing. Stage keys are fixed by `StageKey` in `schema.py`; Visits depend on them.
+- Content tests run against a throwaway `<POSTGRES_DB>_test` database (created and migrated per session in `tests/conftest.py`), never the stack's own data. The suite also checks that `content/` validates and has no phone-shaped text.
 - Logs are JSON through structlog, including uvicorn's. `middleware.py` binds `X-Request-ID` (accepted or generated) to every line and logs one `request` line per request. Uvicorn's access log is off because it prints client IPs, which ADR 0002 forbids.
 - Readiness (`/api/v1/health/ready`) pings each dependency with a short timeout and returns 503 with per-dependency status when any fails.
 - `frontend/src/`: `ReadinessPage` renders the readiness result; `readiness.ts` fetches it and treats anything other than a 200 or 503 report as "API unreachable".

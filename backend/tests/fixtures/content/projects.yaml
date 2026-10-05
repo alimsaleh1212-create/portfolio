@@ -1,0 +1,13 @@
+projects:
+  - slug: alpha
+    name: Alpha
+    tagline: First project
+    description: I built Alpha.
+    stack: [Python]
+    metrics: ["95% recall"]
+  - slug: beta
+    name: Beta
+    tagline: Second project
+    description: I built Beta.
+    stack: []
+    metrics: []

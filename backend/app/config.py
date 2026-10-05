@@ -1,6 +1,7 @@
 """Application settings, read from environment variables only."""
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -22,6 +23,8 @@ class Settings(BaseSettings):
     minio_bucket: str = "portfolio-media"
     health_check_timeout_seconds: float = 2.0
     log_level: str = "INFO"
+    # Folder holding profile.yaml, stages.yaml and projects.yaml.
+    content_dir: Path = Path("/content")
 
 
 @lru_cache
