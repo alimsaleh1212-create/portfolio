@@ -1,0 +1,104 @@
+# Source: Ali's CV. First person; roles, dates and metrics as the CV has them.
+name: Ali Saleh
+headline: "AI Development Specialist | AI Automation, Agents & Integrations"
+location: Beirut, Lebanon
+summary: >-
+  I am an AI engineer who builds and ships AI agents, automations and API
+  integrations, backed by 5+ years of backend development and a Master's in
+  Management Information Systems. I design multi-agent workflows with Claude and
+  LangGraph, automate work with agentic coding tools (Claude Code, Codex), and
+  package repeatable processes as documented, reusable Claude Skills. I am
+  experienced in keeping live AI workflows reliable: drift monitoring,
+  human-in-the-loop approvals and evaluation-gated releases. I have a background
+  in healthcare software, working remotely with distributed teams.
+links:
+  email: ali.msaleh1212@gmail.com
+  linkedin: https://linkedin.com/in/ali-saleh-422010386
+  github: https://github.com/alimsaleh1212-create
+skills:
+  - category: AI Tools & Agentic Coding
+    items:
+      - Claude
+      - Claude Code
+      - Codex
+      - opencode
+      - Claude Skills
+      - MCP servers
+      - multi-model routing (Claude, Gemini, GLM)
+  - category: Agents & Prompt Engineering
+    items:
+      - Prompt design and testing
+      - prompts versioned as code
+      - agent design
+      - tool calling
+      - multi-agent and supervisor workflows (LangGraph, LangChain)
+      - RAG
+      - human-in-the-loop
+      - guardrails (NeMo)
+  - category: Automation & Integrations
+    items:
+      - REST APIs
+      - webhooks
+      - FastAPI
+      - background workers
+      - Redis queues with idempotent retries
+      - Pydantic validation
+      - GitHub Actions
+  - category: Monitoring & Evaluation
+    items:
+      - Drift detection
+      - LangSmith
+      - Langfuse
+      - RAGAS
+      - OpenTelemetry
+      - evaluation-gated CI
+      - watchdogs
+  - category: Languages
+    items:
+      - Python
+      - TypeScript / JavaScript
+      - C#
+      - SQL
+  - category: Tools, Dashboards & Infrastructure
+    items:
+      - React
+      - Streamlit
+      - PostgreSQL
+      - Supabase
+      - Vercel
+      - RunPod (GPU)
+      - Docker
+      - Linux
+      - Git
+experience:
+  - role: AI Engineer & Team Lead
+    organization: Kirelo (mini-soccer AI analytics startup)
+    location: UAE
+    period: Jun 2026 – Present
+    highlights:
+      - I lead two engineers building and testing the product's AI pipeline end to end, also covering full-stack development and DevOps.
+      - I built background workers that run AI jobs on rented RunPod GPUs, with watchdogs that monitor the jobs and keep the pipeline running without manual checks.
+      - I integrated the RunPod MCP server to manage GPUs from AI coding agents. I deployed the web app on Vercel and Supabase.
+      - I delivered player and ball detection (RF-DETR) at 95% recall and tracking (ByteTrack, homography) at 97% track purity.
+      - I created a goal detection model that recognises goals in match footage at 95% recall.
+  - role: Backend Developer
+    organization: Remote / Freelance
+    period: 2019 – 2025
+    highlights:
+      - I built and maintained secure ASP.NET backends for polyclinic management systems in healthcare, working remotely with clients.
+education:
+  - title: Artificial Intelligence Engineering Bootcamp
+    institution: SE Factory
+    location: Beirut, Lebanon
+    year: "2026"
+  - title: M.Sc., Management Information Systems
+    institution: Lebanese University
+    location: Lebanon
+    year: "2018"
+  - title: B.Sc., Management Information Systems
+    institution: Lebanese University
+    location: Lebanon
+    year: "2016"
+certifications:
+  - title: Agent Skills with Anthropic
+    issuer: DeepLearning.AI

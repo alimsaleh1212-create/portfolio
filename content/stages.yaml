@@ -1,0 +1,44 @@
+# The five Stages of the Climb, in order. The keys are fixed: Visits are
+# recorded against them. Every Challenge is a placeholder until Ali writes it;
+# `python -m app.seed --strict` fails while any PLACEHOLDER: marker remains.
+stages:
+  - key: trailhead
+    name: Trailhead
+    period: 2016 – 2018
+    body: >-
+      I earned a B.Sc. in Management Information Systems at Lebanese University
+      in 2016. I earned an M.Sc. in Management Information Systems at Lebanese
+      University in 2018.
+    challenge: "PLACEHOLDER: Ali will write the Trailhead Challenge in his own words."
+  - key: long-approach
+    name: Long Approach
+    period: 2019 – 2025
+    body: >-
+      I worked as a Backend Developer, remote and freelance. I built and
+      maintained secure ASP.NET backends for polyclinic management systems in
+      healthcare, working remotely with clients.
+    challenge: "PLACEHOLDER: Ali will write the Long Approach Challenge in his own words."
+  - key: steep-switch
+    name: Steep Switch
+    period: "2026"
+    body: >-
+      I completed the Artificial Intelligence Engineering Bootcamp at SE
+      Factory, Beirut, Lebanon.
+    challenge: "PLACEHOLDER: Ali will write the Steep Switch Challenge in his own words."
+  - key: ridge
+    name: Ridge
+    # The CV gives no dates for the Projects, so there is no period to state.
+    period: null
+    body: I built six AI automation and agent projects.
+    challenge: "PLACEHOLDER: Ali will write the Ridge Challenge in his own words."
+  - key: high-camp
+    name: High Camp
+    period: Jun 2026 – Present
+    body: >-
+      I am AI Engineer & Team Lead at Kirelo, a mini-soccer AI analytics startup
+      in the UAE. I lead two engineers building and testing the product's AI
+      pipeline end to end, also covering full-stack development and DevOps. I
+      delivered player and ball detection (RF-DETR) at 95% recall and tracking
+      (ByteTrack, homography) at 97% track purity. I created a goal detection
+      model that recognises goals in match footage at 95% recall.
+    challenge: "PLACEHOLDER: Ali will write the High Camp Challenge in his own words."
