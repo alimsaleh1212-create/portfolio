@@ -1,16 +1,23 @@
 import { useQueries } from "@tanstack/react-query";
 
-import { profileQuery, projectsQuery } from "./client";
-import type { Profile, Project } from "./types";
+import { mediaQuery, profileQuery, projectsQuery } from "./client";
+import type { MediaItem, Profile, Project } from "./types";
 
 export type SummaryState =
   | { status: "loading" }
   | { status: "error"; retry: () => void; retrying: boolean }
-  | { status: "ready"; profile: Profile; projects: Project[] };
+  | { status: "ready"; profile: Profile; projects: Project[]; media: MediaItem[] };
 
-/** Everything the Summary shows: the profile and the six Projects, as one state. */
+/**
+ * Everything the Summary shows: the profile, the six Projects and the media, as one
+ * state. The page waits for the media to settle so the Portrait is there from the first
+ * paint and nothing moves when it arrives; if the media cannot be had, the page shows
+ * without it.
+ */
 export function useSummary(): SummaryState {
-  const [profile, projects] = useQueries({ queries: [profileQuery, projectsQuery] });
+  const [profile, projects, media] = useQueries({
+    queries: [profileQuery, projectsQuery, mediaQuery],
+  });
 
   if (profile.isError || projects.isError) {
     return {
@@ -22,8 +29,13 @@ export function useSummary(): SummaryState {
       },
     };
   }
-  if (profile.data && projects.data) {
-    return { status: "ready", profile: profile.data, projects: projects.data };
+  if (profile.data && projects.data && (media.data || media.isError)) {
+    return {
+      status: "ready",
+      profile: profile.data,
+      projects: projects.data,
+      media: media.data ?? [],
+    };
   }
   return { status: "loading" };
 }

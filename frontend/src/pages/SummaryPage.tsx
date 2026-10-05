@@ -1,7 +1,11 @@
+import { findMedia } from "../api/media";
 import { Button } from "../components/Button";
+import { CvDownload } from "../components/CvDownload";
+import { Portrait } from "../components/Portrait";
+import { VideoCv } from "../components/VideoCv";
 import { TagList } from "../components/TagList";
 import { useSummary } from "../api/useSummary";
-import type { Profile, Project } from "../api/types";
+import type { MediaItem, Profile, Project } from "../api/types";
 import { usePageTitle } from "../usePageTitle";
 
 const SECTIONS = [
@@ -24,10 +28,22 @@ export function SummaryPage() {
   if (state.status === "error") {
     return <SummaryError retry={state.retry} retrying={state.retrying} />;
   }
-  return <SummaryContent profile={state.profile} projects={state.projects} />;
+  return <SummaryContent profile={state.profile} projects={state.projects} media={state.media} />;
 }
 
-function SummaryContent({ profile, projects }: { profile: Profile; projects: Project[] }) {
+function SummaryContent({
+  profile,
+  projects,
+  media,
+}: {
+  profile: Profile;
+  projects: Project[];
+  media: MediaItem[];
+}) {
+  // A role that was not seeded is simply not drawn: no frame, no link.
+  const portrait = findMedia(media, "portrait");
+  const video = findMedia(media, "video_cv");
+  const cv = findMedia(media, "cv_pdf");
   // A section with nothing in it is left out, along with its jump link.
   const present = {
     experience: profile.experience.length > 0,
@@ -43,9 +59,12 @@ function SummaryContent({ profile, projects }: { profile: Profile; projects: Pro
         className="bg-dawn pointer-events-none absolute inset-x-0 top-0 h-96"
       />
       <div className={`relative ${gridClass}`}>
-        {/* The identity column. The Portrait goes above the name and the CV download below the contact links (ticket #8). */}
         <aside className="lg:col-span-4 lg:sticky lg:top-8 lg:self-start">
-          <h1 translate="no" className="text-display font-semibold tracking-tight">
+          {portrait && <Portrait item={portrait} />}
+          <h1
+            translate="no"
+            className={`text-display font-semibold tracking-tight ${portrait ? "mt-6" : ""}`}
+          >
             {profile.name}
           </h1>
           <p className="text-ink-muted mt-4 text-lg leading-snug">{profile.headline}</p>
@@ -71,6 +90,8 @@ function SummaryContent({ profile, projects }: { profile: Profile; projects: Pro
             </ul>
           </nav>
 
+          {cv && <CvDownload item={cv} />}
+
           <nav aria-label="On this page" className="mt-8">
             <ul className="border-line flex flex-wrap gap-x-5 gap-y-1 lg:block lg:space-y-1 lg:border-s">
               {SECTIONS.filter(({ id }) => present[id]).map(({ id, label }) => (
@@ -94,7 +115,7 @@ function SummaryContent({ profile, projects }: { profile: Profile; projects: Pro
             </h2>
             <p className="max-w-measure text-lg">{profile.summary}</p>
           </section>
-          {/* The Video CV goes here, between the summary and the experience (ticket #8). */}
+          {video && <VideoCv item={video} />}
 
           {present.experience && (
             <section

@@ -57,3 +57,26 @@ export interface Project {
   stack: string[];
   metrics: Metric[];
 }
+
+export type MediaRole = "portrait" | "video_cv" | "cv_pdf";
+
+/** One file of a media item; `url` is on our own origin under `/media/`. */
+export interface MediaVariant {
+  kind: "image" | "video" | "poster" | "document";
+  /** avif, webp, jpeg, h264 or pdf. */
+  format: string;
+  content_type: string;
+  url: string;
+  size_bytes: number;
+  width: number | null;
+  height: number | null;
+}
+
+/** The Portrait, the Video CV or the CV PDF. A role that was not seeded is absent. */
+export interface MediaItem {
+  role: MediaRole;
+  alt: string | null;
+  download_name: string | null;
+  duration_seconds: number | null;
+  variants: MediaVariant[];
+}

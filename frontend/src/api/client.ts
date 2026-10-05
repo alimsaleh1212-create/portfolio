@@ -1,6 +1,6 @@
 import { QueryClient, queryOptions } from "@tanstack/react-query";
 
-import type { Profile, Project } from "./types";
+import type { MediaItem, Profile, Project } from "./types";
 
 const API_ROOT = "/api/v1";
 
@@ -41,6 +41,13 @@ export const profileQuery = queryOptions({
 export const projectsQuery = queryOptions({
   queryKey: ["projects"],
   queryFn: () => getJson<Project[]>("/projects"),
+});
+
+/** Media is a decoration: when it cannot be had the page is shown without it, so no retry. */
+export const mediaQuery = queryOptions({
+  queryKey: ["media"],
+  queryFn: () => getJson<MediaItem[]>("/media"),
+  retry: false,
 });
 
 /** Content changes only when the seed runs, so cache it for the visit. One quick retry, then show the error. */

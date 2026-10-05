@@ -117,7 +117,7 @@ export function findViolations(source: string, tokens: TokenNames): string[] {
 /** Words after a colour prefix that are layout or image tokens, not colours (`border-s`, `bg-dawn`). */
 const NON_COLOR_WORDS = new Set([
   "s", "e", "t", "b", "l", "r", "x", "y", "solid", "dashed", "dotted", "none", "transparent",
-  "inherit", "current", "dawn", "horizon", "no-repeat", "repeat", "cover", "contain", "center",
+  "inherit", "current", "dawn", "horizon", "portrait-fade", "no-repeat", "repeat", "cover", "contain", "center",
 ]);
 
 /** Colour tokens used as `text-*` in a source file, for the contrast check. */

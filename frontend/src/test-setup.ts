@@ -8,3 +8,12 @@ afterEach(() => {
 
 // jsdom does not implement scrolling.
 window.scrollTo = () => {};
+
+// jsdom does not implement matchMedia; nothing matches, so the large-screen choices apply.
+window.matchMedia ??= (query: string) =>
+  ({
+    matches: false,
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }) as unknown as MediaQueryList;

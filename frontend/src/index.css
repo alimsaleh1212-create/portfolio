@@ -86,6 +86,12 @@
     var(--color-dusk) 55%,
     var(--color-accent)
   );
+  /* The Portrait's lower edge dissolves into the ground. */
+  --background-image-portrait-fade: linear-gradient(
+    to top,
+    var(--color-ground),
+    transparent 40%
+  );
   --background-image-dawn: radial-gradient(
     ellipse 70% 100% at 50% 0%,
     var(--color-glow),

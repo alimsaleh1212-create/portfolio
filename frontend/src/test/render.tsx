@@ -4,7 +4,7 @@ import { vi } from "vitest";
 
 import { App } from "../App";
 import { createQueryClient } from "../api/client";
-import { profile, projects } from "./fixtures";
+import { media, profile, projects } from "./fixtures";
 
 /** Stub `fetch` so each API path answers with the given handler's response. */
 export function stubApi(handler: (path: string) => Response | Promise<Response>) {
@@ -15,9 +15,10 @@ export function stubApi(handler: (path: string) => Response | Promise<Response>)
 
 export const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
-export function answerWithContent(path: string): Response {
+export function answerWithContent(path: string, available = media): Response {
   if (path.endsWith("/profile")) return json(profile);
   if (path.endsWith("/projects")) return json(projects);
+  if (path.endsWith("/media")) return json(available);
   return json({ detail: "not found" }, 404);
 }
 
