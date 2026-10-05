@@ -7,7 +7,7 @@ export function CvDownload({ item }: { item: MediaItem }) {
   const file = item.variants.find((variant) => variant.kind === "document");
   if (!file) return null;
   return (
-    <div className="mt-8">
+    <div className="mt-6">
       <a
         href={file.url}
         download={item.download_name ?? undefined}

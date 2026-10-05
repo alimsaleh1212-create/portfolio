@@ -3,14 +3,14 @@ import type { MediaItem } from "../api/types";
 
 /*
  * `sizes` hints, not design values: how wide the picture is drawn, so the browser picks a
- * file that fits. They match the layout in SummaryPage (a fixed slot on small screens, the
- * identity column from the `lg` breakpoint up). Built from numbers so the tokens-only check
+ * file that fits. They match the layout in SummaryPage (a fixed slot, a little smaller from
+ * the `lg` breakpoint up where the identity column has to fit one screen). Built from numbers so the tokens-only check
  * stays strict about literals in class names and styles.
  */
 const px = (n: number) => `${n}px`;
 const LARGE_BREAKPOINT = 1024;
 const SMALL_SLOT = 192;
-const LARGE_SLOT = 352;
+const LARGE_SLOT = 160;
 const SIZES = `(min-width: ${px(LARGE_BREAKPOINT)}) ${px(LARGE_SLOT)}, ${px(SMALL_SLOT)}`;
 
 /**
@@ -23,7 +23,7 @@ export function Portrait({ item }: { item: MediaItem }) {
   const fallback = widest(item.variants, "jpeg");
   if (!fallback || !fallback.width || !fallback.height) return null;
   return (
-    <div className="relative w-48 lg:w-full">
+    <div className="relative w-48 lg:w-40">
       <picture>
         <source type="image/avif" srcSet={srcSet(item.variants, "avif")} sizes={SIZES} />
         <source type="image/webp" srcSet={srcSet(item.variants, "webp")} sizes={SIZES} />

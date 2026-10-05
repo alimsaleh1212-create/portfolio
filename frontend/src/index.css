@@ -198,6 +198,13 @@
   }
 }
 
+/*
+ * Tall viewports. A media query cannot read a token, so the threshold is written
+ * here (the one literal allowed outside @theme): the identity column sticks only
+ * when the viewport is at least this tall.
+ */
+@custom-variant tall (@media (min-height: 50rem));
+
 /* Pressable things dip slightly under the finger. */
 @utility press {
   transition-property: color, background-color, border-color, transform;

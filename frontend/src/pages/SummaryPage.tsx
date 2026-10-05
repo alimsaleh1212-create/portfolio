@@ -15,7 +15,8 @@ const SECTIONS = [
   { id: "education", label: "Education" },
 ] as const;
 
-const pageClass = "px-gutter md:px-gutter-wide py-section md:py-section-wide";
+// Tighter top and bottom on wide screens, so the identity column fits the first screen.
+const pageClass = "px-gutter md:px-gutter-wide py-section md:py-section-wide lg:py-12";
 const gridClass = "max-w-page mx-auto grid gap-x-16 gap-y-12 lg:grid-cols-12";
 const h2Class = "text-xl font-semibold tracking-snug";
 
@@ -59,19 +60,20 @@ function SummaryContent({
         className="bg-dawn pointer-events-none absolute inset-x-0 top-0 h-96"
       />
       <div className={`relative ${gridClass}`}>
-        <aside className="lg:col-span-4">
+        {/* Sticks on wide screens that are tall enough to hold it; on shorter ones it scrolls with the page so nothing in it is out of reach. */}
+        <aside className="lg:col-span-4 lg:self-start lg:tall:sticky lg:tall:top-8">
           {portrait && <Portrait item={portrait} />}
           <h1
             translate="no"
-            className={`text-display font-semibold tracking-tight ${portrait ? "mt-6" : ""}`}
+            className={`text-display font-semibold tracking-tight ${portrait ? "mt-5" : ""}`}
           >
             {profile.name}
           </h1>
-          <p className="text-ink-muted mt-4 text-lg leading-snug">{profile.headline}</p>
+          <p className="text-ink-muted mt-3 text-lg leading-snug">{profile.headline}</p>
           <p className="text-ink-muted mt-2 font-mono text-sm">{profile.location}</p>
 
-          <nav aria-label="Contact" className="mt-8">
-            <ul className="space-y-4">
+          <nav aria-label="Contact" className="mt-6">
+            <ul className="space-y-3">
               <ContactLink
                 label="Email"
                 href={`mailto:${profile.links.email}`}
@@ -92,7 +94,7 @@ function SummaryContent({
 
           {cv && <CvDownload item={cv} />}
 
-          <nav aria-label="On this page" className="mt-8">
+          <nav aria-label="On this page" className="mt-6">
             <ul className="border-line flex flex-wrap gap-x-5 gap-y-1 lg:block lg:space-y-1 lg:border-s">
               {SECTIONS.filter(({ id }) => present[id]).map(({ id, label }) => (
                 <li key={id}>
