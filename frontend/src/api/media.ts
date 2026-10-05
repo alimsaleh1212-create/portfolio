@@ -33,17 +33,17 @@ export function nearestWidth(
   return sorted.find((variant) => (variant.width ?? 0) >= wanted) ?? sorted.at(-1);
 }
 
-/** "87 KB", "22.8 MB". */
+/** "87 KB", "22.8 MB", with a no-break space so the unit stays with the number. */
 export function formatBytes(bytes: number): string {
-  if (bytes < 1_000_000) return `${Math.max(1, Math.round(bytes / 1000))} KB`;
-  return `${(bytes / 1_000_000).toFixed(1)} MB`;
+  if (bytes < 1_000_000) return `${Math.max(1, Math.round(bytes / 1000))}\u00a0KB`;
+  return `${(bytes / 1_000_000).toFixed(1)}\u00a0MB`;
 }
 
-/** 85.4 seconds becomes "1 min 25 s". */
+/** 85.4 seconds becomes "1 min 25 s" (no-break spaces). */
 export function formatDuration(seconds: number): string {
   const whole = Math.round(seconds);
   const minutes = Math.floor(whole / 60);
   const rest = whole % 60;
-  if (minutes === 0) return `${rest} s`;
-  return rest === 0 ? `${minutes} min` : `${minutes} min ${rest} s`;
+  if (minutes === 0) return `${rest}\u00a0s`;
+  return rest === 0 ? `${minutes}\u00a0min` : `${minutes}\u00a0min\u00a0${rest}\u00a0s`;
 }

@@ -59,7 +59,7 @@ function SummaryContent({
         className="bg-dawn pointer-events-none absolute inset-x-0 top-0 h-96"
       />
       <div className={`relative ${gridClass}`}>
-        <aside className="lg:col-span-4 lg:sticky lg:top-8 lg:self-start">
+        <aside className="lg:col-span-4">
           {portrait && <Portrait item={portrait} />}
           <h1
             translate="no"

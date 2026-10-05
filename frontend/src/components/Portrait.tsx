@@ -10,7 +10,7 @@ import type { MediaItem } from "../api/types";
 const px = (n: number) => `${n}px`;
 const LARGE_BREAKPOINT = 1024;
 const SMALL_SLOT = 192;
-const LARGE_SLOT = 363;
+const LARGE_SLOT = 352;
 const SIZES = `(min-width: ${px(LARGE_BREAKPOINT)}) ${px(LARGE_SLOT)}, ${px(SMALL_SLOT)}`;
 
 /**
