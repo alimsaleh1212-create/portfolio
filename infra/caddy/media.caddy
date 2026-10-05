@@ -1,0 +1,36 @@
+# The media bucket's objects, served read-only under /media/. Imported by both
+# Caddyfiles. MinIO itself is not published; this is the only way to it.
+#
+# Object keys are named by content hash, so a URL never changes meaning and a
+# response can be cached for good. Range requests pass through untouched, which
+# is what lets a browser stream and seek in the video.
+handle /media/* {
+	# Reads only.
+	@writes not method GET HEAD OPTIONS
+	respond @writes "Method not allowed" 405
+
+	# Media addresses have no query string; refuse one rather than forward
+	# bucket-level S3 queries (listing, versions) to MinIO.
+	@query expression `{http.request.uri.query} != ""`
+	respond @query "Not found" 404
+
+	uri strip_prefix /media
+	rewrite * /{$MINIO_BUCKET}{path}
+
+	reverse_proxy minio:9000 {
+		header_up Host {upstream_hostport}
+
+		# Do not leak what MinIO is, its version of the S3 API or its ids.
+		header_down -Server
+		header_down -X-Amz-*
+		header_down -X-Minio-*
+		header_down -X-Ratelimit-*
+		header_down -Strict-Transport-Security
+		header_down -X-Xss-Protection
+		header_down -X-Content-Type-Options
+
+		# Only successful answers are cached; a 404 for a not-yet-seeded key is not.
+		@found status 200 206
+		header_down @found Cache-Control "public, max-age=31536000, immutable"
+	}
+}

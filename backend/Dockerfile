@@ -9,7 +9,12 @@ RUN useradd --system --no-create-home app
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
+# ffmpeg is for preparing the Video CV, which only the seed and the tests do.
+# The API's production image does not carry it.
 FROM base AS dev
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen
 COPY . .
 # Non-root, so a bind-mounted ./backend never gets root-owned files.
@@ -21,3 +26,11 @@ RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev
 COPY . .
 USER app
 CMD ["python", "-m", "app.serve"]
+
+# The prod image plus ffmpeg, for the seed command.
+FROM prod AS seed
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+USER app

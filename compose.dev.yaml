@@ -49,6 +49,9 @@ services:
     image: caddy:2-alpine
     volumes:
       - ./infra/caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+      - ./infra/caddy/media.caddy:/etc/caddy/media.caddy:ro
     depends_on:
       frontend:
+        condition: service_healthy
+      minio:
         condition: service_healthy
