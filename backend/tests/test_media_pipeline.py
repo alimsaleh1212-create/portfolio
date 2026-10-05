@@ -26,6 +26,7 @@ from app.media.manifest import (
 from app.media.pipeline import MediaMissingError, MediaPipeline, MediaReport
 from tests.db_helpers import fetch_all
 from tests.media_helpers import (
+    drop_bucket,
     ffprobe_stream,
     make_pdf,
     make_photo,
@@ -88,10 +89,8 @@ class Env:
         return {variant["key"] for variant in self.rows()[role]["variants"]}
 
     def cleanup(self) -> None:
-        keys = self.store.list_keys()
-        self.store.delete(keys)
-        self.client.delete_bucket(Bucket=self.bucket)
         self.client.close()
+        drop_bucket(self.settings, self.bucket)
 
 
 @pytest.fixture

@@ -28,7 +28,7 @@ from app.data.media_repo import MediaRepository
 from app.data.storage import MediaStore, create_s3_client
 from app.logging import configure_logging
 from app.media.manifest import load_manifest
-from app.media.pipeline import MediaPipeline, require_all_present
+from app.media.pipeline import MediaPipeline, find_missing
 
 logger = structlog.get_logger(__name__)
 
@@ -101,14 +101,32 @@ async def seed_media(settings: Settings, *, strict: bool) -> None:
         s3.close()
 
 
+def strict_problems(settings: Settings) -> list[str]:
+    """List what strict mode refuses: remaining placeholders and missing media."""
+    problems: list[str] = []
+    content = load_content(Path(settings.content_dir))
+    remaining = find_placeholders(content)
+    if remaining:
+        listing = "\n".join(f"  {entry}" for entry in remaining)
+        problems.append(f"{len(remaining)} placeholder(s) remain:\n{listing}")
+    manifest = load_manifest(Path(settings.content_dir))
+    missing = find_missing(manifest, Path(settings.media_source_dir))
+    if missing:
+        listing = "\n".join(f"  {line}" for line in missing)
+        problems.append(f"{len(missing)} media file(s) missing:\n{listing}")
+    return problems
+
+
 async def run_seed(settings: Settings, *, strict: bool) -> None:
     """Load the text content, then the media.
 
-    In strict mode both are checked before anything is loaded.
+    In strict mode both are checked, and every problem listed, before anything
+    is loaded.
     """
     if strict:
-        manifest = load_manifest(Path(settings.content_dir))
-        require_all_present(manifest, Path(settings.media_source_dir))
+        problems = strict_problems(settings)
+        if problems:
+            raise ContentError("\n".join(problems))
     await seed_content(Path(settings.content_dir), settings.database_url, strict=strict)
     await seed_media(settings, strict=strict)
 

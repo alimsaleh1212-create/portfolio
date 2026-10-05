@@ -174,41 +174,29 @@ def test_invalid_content_loads_nothing(
 
 
 def test_cli_exits_non_zero_in_strict_mode_and_names_placeholders(
-    empty_database_url: str,
-    content_dir: Path,
-    settings: Settings,
+    cli_settings: Settings,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    cli_settings = settings.model_copy(
-        update={"database_url": empty_database_url, "content_dir": content_dir}
-    )
 
     code = main(["--strict"], cli_settings)
 
     assert code == 1
-    assert "stages[trailhead].challenge" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert "stages[trailhead].challenge" in err
+    assert "photo.jpg" in err
+    assert fetch_all(cli_settings.database_url, "SELECT * FROM stages") == []
 
 
-def test_cli_exits_zero_without_strict(
-    empty_database_url: str, content_dir: Path, settings: Settings
-) -> None:
-    cli_settings = settings.model_copy(
-        update={"database_url": empty_database_url, "content_dir": content_dir}
-    )
+def test_cli_exits_zero_without_strict(cli_settings: Settings) -> None:
 
     assert main([], cli_settings) == 0
 
 
 def test_cli_reports_invalid_content_with_file_and_field(
-    empty_database_url: str,
-    content_dir: Path,
-    settings: Settings,
+    cli_settings: Settings,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    edit(content_dir / "profile.yaml", "headline: Test Headline\n", "")
-    cli_settings = settings.model_copy(
-        update={"database_url": empty_database_url, "content_dir": content_dir}
-    )
+    edit(cli_settings.content_dir / "profile.yaml", "headline: Test Headline\n", "")
 
     code = main([], cli_settings)
 

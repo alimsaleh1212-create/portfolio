@@ -9,7 +9,11 @@ import struct
 import subprocess  # noqa: S404
 from pathlib import Path
 
+from botocore.exceptions import ClientError
 from PIL import Image, ImageCms, ImageDraw
+
+from app.config import Settings
+from app.data.storage import MediaStore, create_s3_client
 
 # Strings planted in the metadata; none may survive into a served image.
 PLANTED_OWNER = "Planted Photographer Name"
@@ -157,6 +161,26 @@ def metadata_found(data: bytes) -> list[str]:
             found.append("pillow-exif")
         if "icc_profile" in image.info:
             found.append("pillow-icc")
-        if "xmp" in image.info or image.getxmp():
+        if "xmp" in image.info:
             found.append("pillow-xmp")
     return found
+
+
+def drop_bucket(settings: Settings, bucket: str) -> None:
+    """Delete a throwaway bucket and everything in it; fine if it was never made."""
+    client = create_s3_client(
+        settings.minio_endpoint,
+        settings.minio_access_key,
+        settings.minio_secret_key,
+        60,
+    )
+    try:
+        store = MediaStore(client, bucket)
+        try:
+            store.delete(store.list_keys())
+            client.delete_bucket(Bucket=bucket)
+        except ClientError as exc:
+            if exc.response.get("Error", {}).get("Code") != "NoSuchBucket":
+                raise
+    finally:
+        client.close()
