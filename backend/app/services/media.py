@@ -1,0 +1,73 @@
+"""Media service: each prepared item described for the API."""
+
+from pydantic import BaseModel
+
+from app.data.media_repo import MediaRepository
+from app.media.schema import ROLE_ORDER, MediaRole, VariantKind
+
+MEDIA_URL_PREFIX = "/media/"
+
+
+class MediaVariant(BaseModel):
+    """One file of a media item, with the address Caddy serves it at."""
+
+    kind: VariantKind
+    format: str
+    """avif, webp, jpeg, h264 or pdf."""
+    content_type: str
+    url: str
+    size_bytes: int
+    width: int | None
+    height: int | None
+
+
+class MediaItem(BaseModel):
+    """One media item: the Portrait, the Video CV or the CV PDF."""
+
+    role: MediaRole
+    alt: str | None
+    """Alternative text for the Portrait; the label for the Video CV."""
+    download_name: str | None
+    """The file name a download is saved under (CV PDF only)."""
+    duration_seconds: float | None
+    """Length of the Video CV."""
+    variants: list[MediaVariant]
+
+
+class MediaService:
+    """Serves the prepared media."""
+
+    def __init__(self, repository: MediaRepository) -> None:
+        """Store the repository to read from."""
+        self._repository = repository
+
+    async def list_items(self) -> list[MediaItem]:
+        """Return the items that exist, in a fixed role order.
+
+        A role whose source file was never supplied is absent from the list.
+        """
+        records = {
+            record.role: record for record in await self._repository.list_items()
+        }
+        return [
+            MediaItem(
+                role=role,
+                alt=record.alt,
+                download_name=record.download_name,
+                duration_seconds=record.duration_seconds,
+                variants=[
+                    MediaVariant(
+                        kind=variant.kind,
+                        format=variant.format,
+                        content_type=variant.content_type,
+                        url=f"{MEDIA_URL_PREFIX}{variant.key}",
+                        size_bytes=variant.size_bytes,
+                        width=variant.width,
+                        height=variant.height,
+                    )
+                    for variant in record.variants
+                ],
+            )
+            for role in ROLE_ORDER
+            if (record := records.get(role))
+        ]
