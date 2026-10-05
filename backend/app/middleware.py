@@ -6,12 +6,15 @@ import uuid
 
 import structlog
 from starlette.datastructures import MutableHeaders
+from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 REQUEST_ID_HEADER = "X-Request-ID"
 # Inbound IDs end up in logs, so only accept a short, harmless alphabet.
 _VALID_REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
+
+BODY_TOO_LARGE = "Request body too large."
 
 logger = structlog.get_logger(__name__)
 
@@ -91,3 +94,47 @@ class RequestIdMiddleware:
                 duration_ms=round((time.perf_counter() - started_at) * 1000, 2),
             )
             structlog.contextvars.clear_contextvars()
+
+
+class BodyLimitMiddleware:
+    """Refuse request bodies larger than a small limit with 413.
+
+    The check uses `Content-Length` when present and counts streamed bytes
+    otherwise, so chunked uploads cannot slip past it.
+    """
+
+    def __init__(self, app: ASGIApp, max_bytes: int) -> None:
+        """Wrap an ASGI app."""
+        self.app = app
+        self._max_bytes = max_bytes
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Handle one ASGI connection."""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        declared = dict(scope["headers"]).get(b"content-length", b"")
+        if declared.isdigit() and int(declared) > self._max_bytes:
+            await self._refuse(scope, receive, send)
+            return
+
+        received = 0
+
+        async def counting_receive() -> Message:
+            nonlocal received
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > self._max_bytes:
+                    # An HTTPException passes through FastAPI's body parsing (any other
+                    # exception there becomes a 400) and is answered as a 413.
+                    raise HTTPException(status_code=413, detail=BODY_TOO_LARGE)
+            return message
+
+        await self.app(scope, counting_receive, send)
+
+    @staticmethod
+    async def _refuse(scope: Scope, receive: Receive, send: Send) -> None:
+        response = JSONResponse({"detail": BODY_TOO_LARGE}, status_code=413)
+        await response(scope, receive, send)
