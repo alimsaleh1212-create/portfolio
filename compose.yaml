@@ -82,15 +82,35 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET:-portfolio-media}
       HEALTH_CHECK_TIMEOUT_SECONDS: ${HEALTH_CHECK_TIMEOUT_SECONDS:-2}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Where the content files are mounted inside the container.
+      CONTENT_DIR: /content
     depends_on:
       postgres:
         condition: service_healthy
+    restart: "no"
+
+  # One-shot job: loads the text content into Postgres, then exits. Runs in
+  # non-strict mode so a fresh stack always has content, placeholders included.
+  # By hand: docker compose run --rm seed python -m app.seed [--strict]
+  seed:
+    build: *backend-build
+    image: ali-portfolio-api
+    command: ["python", "-m", "app.seed"]
+    environment: *api-environment
+    volumes: &content-volume
+      - ./content:/content:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     restart: "no"
 
   api:
     build: *backend-build
     image: ali-portfolio-api
     environment: *api-environment
+    # The API itself does not read the files; the test suite run in this
+    # container does, to check the real content.
+    volumes: *content-volume
     depends_on:
       postgres:
         condition: service_healthy
@@ -101,6 +121,8 @@ services:
       minio-init:
         condition: service_completed_successfully
       migrate:
+        condition: service_completed_successfully
+      seed:
         condition: service_completed_successfully
     healthcheck:
       test:

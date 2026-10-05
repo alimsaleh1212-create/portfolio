@@ -11,6 +11,11 @@ services:
       target: dev
     image: ali-portfolio-api-dev
 
+  seed:
+    build:
+      target: dev
+    image: ali-portfolio-api-dev
+
   api:
     build:
       target: dev
