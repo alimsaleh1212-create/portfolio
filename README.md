@@ -32,6 +32,15 @@ Open <http://localhost:8080> (change the port with `CADDY_PORT` in `.env`). Cadd
 
 Stop with `docker compose down`; add `-v` to also delete the data volumes.
 
+## Visits and privacy
+
+The site records each Visit (one page load) and how far up the Climb it got, and never identifies a Visitor (ADR 0002). It sets no cookies and writes nothing to local or session storage, and the API has no CORS because the frontend is same-origin.
+
+- `POST /api/v1/visits` starts a Visit and returns `{"id": ...}`; a known bot gets `204` and no ID. `POST /api/v1/visits/{id}/events` adds a Stage reached, Project opened, CV downloaded or contact message sent event (`204`; repeating a Stage reached changes nothing). Both answer `429` past a per-client limit; bodies over 4 KiB get `413`; a Visit takes events for 24 hours.
+- Unique Visitors are counted with a hash of the client address and user agent, keyed by a random salt that exists only in Redis and expires after its UTC day. The address is never stored or logged. If Redis is down, Visits are recorded without a hash.
+- Progress is derived, not stored. The views `visit_progress` (each Visit's highest Stage) and `visits_per_stage` (Visits per Stage, in Climb order) are what Grafana reads.
+- Caddy writes no access log on purpose and passes the client address to the API in `X-Forwarded-For`, replacing whatever the client sent.
+
 ## Content and the seed command
 
 All copy lives in `content/` and comes from Ali's CV: first person, with roles, dates and metrics as the CV has them (a metric is a `value` and a `label`). Each file is validated against a schema (`backend/app/content/schema.py`).
