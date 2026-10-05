@@ -1,4 +1,4 @@
-import type { Profile, Project } from "../api/types";
+import type { MediaItem, MediaVariant, Profile, Project } from "../api/types";
 
 export const profile: Profile = {
   name: "Ali Saleh",
@@ -93,3 +93,82 @@ export const projects: Project[] = [
     metrics: [{ value: "92%", label: "classification accuracy under evaluation-gated CI" }],
   },
 ];
+
+const image = (
+  kind: MediaVariant["kind"],
+  format: string,
+  stem: string,
+  width: number,
+  height: number,
+): MediaVariant => ({
+  kind,
+  format,
+  content_type: format === "jpeg" ? "image/jpeg" : `image/${format}`,
+  url: `/media/${stem}-w${width}-${format}`,
+  size_bytes: width * 10,
+  width,
+  height,
+});
+
+const widths = [320, 640, 1280];
+const formats = ["avif", "webp", "jpeg"];
+
+export const portraitItem: MediaItem = {
+  role: "portrait",
+  alt: "Ali Saleh smiling in front of green leaves.",
+  download_name: null,
+  duration_seconds: null,
+  variants: widths.flatMap((width) =>
+    formats.map((format) => image("image", format, "portrait", width, Math.round(width * 1.05))),
+  ),
+};
+
+export const videoItem: MediaItem = {
+  role: "video_cv",
+  alt: "Video introduction from Ali Saleh.",
+  download_name: null,
+  duration_seconds: 84.5,
+  variants: [
+    {
+      kind: "video",
+      format: "h264",
+      content_type: "video/mp4",
+      url: "/media/video-1080",
+      size_bytes: 22_800_000,
+      width: 1920,
+      height: 1080,
+    },
+    {
+      kind: "video",
+      format: "h264",
+      content_type: "video/mp4",
+      url: "/media/video-720",
+      size_bytes: 12_500_000,
+      width: 1280,
+      height: 720,
+    },
+    ...[960, 1280].flatMap((width) =>
+      formats.map((format) => image("poster", format, "poster", width, (width * 9) / 16)),
+    ),
+  ],
+};
+
+export const cvItem: MediaItem = {
+  role: "cv_pdf",
+  alt: null,
+  download_name: "Ali_Saleh_CV.pdf",
+  duration_seconds: null,
+  variants: [
+    {
+      kind: "document",
+      format: "pdf",
+      content_type: "application/pdf",
+      url: "/media/cv-abc.pdf",
+      size_bytes: 89_000,
+      width: null,
+      height: null,
+    },
+  ],
+};
+
+export const media: MediaItem[] = [portraitItem, videoItem, cvItem];

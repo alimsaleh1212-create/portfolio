@@ -1,7 +1,11 @@
+import { findMedia } from "../api/media";
 import { Button } from "../components/Button";
+import { CvDownload } from "../components/CvDownload";
+import { Portrait } from "../components/Portrait";
+import { VideoCv } from "../components/VideoCv";
 import { TagList } from "../components/TagList";
 import { useSummary } from "../api/useSummary";
-import type { Profile, Project } from "../api/types";
+import type { MediaItem, Profile, Project } from "../api/types";
 import { usePageTitle } from "../usePageTitle";
 
 const SECTIONS = [
@@ -11,7 +15,8 @@ const SECTIONS = [
   { id: "education", label: "Education" },
 ] as const;
 
-const pageClass = "px-gutter md:px-gutter-wide py-section md:py-section-wide";
+// Tighter top and bottom on wide screens, so the identity column fits the first screen.
+const pageClass = "px-gutter md:px-gutter-wide py-section md:py-section-wide lg:py-12";
 const gridClass = "max-w-page mx-auto grid gap-x-16 gap-y-12 lg:grid-cols-12";
 const h2Class = "text-xl font-semibold tracking-snug";
 
@@ -24,10 +29,22 @@ export function SummaryPage() {
   if (state.status === "error") {
     return <SummaryError retry={state.retry} retrying={state.retrying} />;
   }
-  return <SummaryContent profile={state.profile} projects={state.projects} />;
+  return <SummaryContent profile={state.profile} projects={state.projects} media={state.media} />;
 }
 
-function SummaryContent({ profile, projects }: { profile: Profile; projects: Project[] }) {
+function SummaryContent({
+  profile,
+  projects,
+  media,
+}: {
+  profile: Profile;
+  projects: Project[];
+  media: MediaItem[];
+}) {
+  // A role that was not seeded is simply not drawn: no frame, no link.
+  const portrait = findMedia(media, "portrait");
+  const video = findMedia(media, "video_cv");
+  const cv = findMedia(media, "cv_pdf");
   // A section with nothing in it is left out, along with its jump link.
   const present = {
     experience: profile.experience.length > 0,
@@ -43,16 +60,20 @@ function SummaryContent({ profile, projects }: { profile: Profile; projects: Pro
         className="bg-dawn pointer-events-none absolute inset-x-0 top-0 h-96"
       />
       <div className={`relative ${gridClass}`}>
-        {/* The identity column. The Portrait goes above the name and the CV download below the contact links (ticket #8). */}
-        <aside className="lg:col-span-4 lg:sticky lg:top-8 lg:self-start">
-          <h1 translate="no" className="text-display font-semibold tracking-tight">
+        {/* Sticks on wide screens that are tall enough to hold it; on shorter ones it scrolls with the page so nothing in it is out of reach. */}
+        <aside className="lg:col-span-4 lg:self-start lg:tall:sticky lg:tall:top-8">
+          {portrait && <Portrait item={portrait} />}
+          <h1
+            translate="no"
+            className={`text-display font-semibold tracking-tight ${portrait ? "mt-5" : ""}`}
+          >
             {profile.name}
           </h1>
-          <p className="text-ink-muted mt-4 text-lg leading-snug">{profile.headline}</p>
+          <p className="text-ink-muted mt-3 text-lg leading-snug">{profile.headline}</p>
           <p className="text-ink-muted mt-2 font-mono text-sm">{profile.location}</p>
 
-          <nav aria-label="Contact" className="mt-8">
-            <ul className="space-y-4">
+          <nav aria-label="Contact" className="mt-6">
+            <ul className="space-y-3">
               <ContactLink
                 label="Email"
                 href={`mailto:${profile.links.email}`}
@@ -71,7 +92,9 @@ function SummaryContent({ profile, projects }: { profile: Profile; projects: Pro
             </ul>
           </nav>
 
-          <nav aria-label="On this page" className="mt-8">
+          {cv && <CvDownload item={cv} />}
+
+          <nav aria-label="On this page" className="mt-6">
             <ul className="border-line flex flex-wrap gap-x-5 gap-y-1 lg:block lg:space-y-1 lg:border-s">
               {SECTIONS.filter(({ id }) => present[id]).map(({ id, label }) => (
                 <li key={id}>
@@ -94,7 +117,7 @@ function SummaryContent({ profile, projects }: { profile: Profile; projects: Pro
             </h2>
             <p className="max-w-measure text-lg">{profile.summary}</p>
           </section>
-          {/* The Video CV goes here, between the summary and the experience (ticket #8). */}
+          {video && <VideoCv item={video} />}
 
           {present.experience && (
             <section

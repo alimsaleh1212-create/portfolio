@@ -84,21 +84,29 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       # Where the content files are mounted inside the container.
       CONTENT_DIR: /content
+      # Where the media folder is mounted inside the seed container.
+      MEDIA_SOURCE_DIR: /media-source
     depends_on:
       postgres:
         condition: service_healthy
     restart: "no"
 
-  # One-shot job: loads the text content into Postgres, then exits. Runs in
-  # non-strict mode so a fresh stack always has content, placeholders included.
+  # One-shot job: loads the text content into Postgres and prepares the media
+  # into MinIO, then exits. Runs in non-strict mode so a fresh stack always
+  # comes up, with placeholders and without media files that are not there.
   # By hand: docker compose run --rm seed python -m app.seed [--strict]
   seed:
-    build: *backend-build
-    image: ali-portfolio-api
+    build:
+      context: ./backend
+      target: seed
+    image: ali-portfolio-seed
     command: ["python", "-m", "app.seed"]
     environment: *api-environment
     volumes: &content-volume
       - ./content:/content:ro
+      # The source photograph, video and PDF. MEDIA_DIR must exist on the host
+      # (the clone ships ./my_docs); Docker would create a missing one as root.
+      - ${MEDIA_DIR:-./my_docs}:/media-source:ro
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -140,10 +148,15 @@ services:
       context: .
       dockerfile: infra/caddy/Dockerfile
     image: ali-portfolio-caddy
+    environment:
+      # Caddy serves the bucket's objects under /media/.
+      MINIO_BUCKET: ${MINIO_BUCKET:-portfolio-media}
     ports:
       - "${CADDY_PORT:-8080}:80"
     depends_on:
       api:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/caddy-health"]

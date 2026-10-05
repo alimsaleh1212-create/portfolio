@@ -86,6 +86,12 @@
     var(--color-dusk) 55%,
     var(--color-accent)
   );
+  /* The Portrait's lower edge dissolves into the ground. */
+  --background-image-portrait-fade: linear-gradient(
+    to top,
+    var(--color-ground),
+    transparent 40%
+  );
   --background-image-dawn: radial-gradient(
     ellipse 70% 100% at 50% 0%,
     var(--color-glow),
@@ -191,6 +197,13 @@
     }
   }
 }
+
+/*
+ * Tall viewports. A media query cannot read a token, so the threshold is written
+ * here (the one literal allowed outside @theme): the identity column sticks only
+ * when the viewport is at least this tall.
+ */
+@custom-variant tall (@media (min-height: 50rem));
 
 /* Pressable things dip slightly under the finger. */
 @utility press {

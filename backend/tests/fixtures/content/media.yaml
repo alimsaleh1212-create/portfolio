@@ -1,0 +1,9 @@
+portrait:
+  file: photo.jpg
+  alt: A test portrait.
+video_cv:
+  file: clip.mov
+  alt: A test clip.
+cv_pdf:
+  file: cv.pdf
+  download_name: Test_CV.pdf

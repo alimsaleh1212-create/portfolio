@@ -1,5 +1,8 @@
-# Source documents hold personal contact details; keep them local
-my_docs/
+# Source documents hold personal contact details; keep them local. The folder
+# itself is tracked (through an empty .gitkeep) so a fresh clone has it and
+# Docker does not create it as root when it is bind-mounted.
+my_docs/*
+!my_docs/.gitkeep
 
 # Git worktrees
 .worktrees/

@@ -72,7 +72,8 @@ describe("the stylesheet uses tokens only", () => {
           !line.trim().startsWith("--") &&
           !line.trim().startsWith("/*") &&
           !line.trim().startsWith("*") &&
-          !line.includes("@import"),
+          !line.includes("@import") &&
+          !line.startsWith("@custom-variant"),
       )
       .filter((line) => /#[0-9a-fA-F]{3,8}\b|\b\d*\.?\d+(px|ms|rem|em|s)\b/.test(line));
     expect(offending).toEqual([]);

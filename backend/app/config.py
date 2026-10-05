@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     # Folder holding profile.yaml, stages.yaml and projects.yaml.
     content_dir: Path = Path("/content")
+    # Folder holding the source photograph, video and PDF, mounted read-only.
+    media_source_dir: Path = Path("/media-source")
 
 
 @lru_cache

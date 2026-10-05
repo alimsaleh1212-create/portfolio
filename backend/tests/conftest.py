@@ -4,6 +4,7 @@ import asyncio
 import os
 import shutil
 import subprocess
+import uuid
 from collections.abc import Callable, Iterator
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from sqlalchemy.engine import make_url
 from app.config import Settings, get_settings
 from app.main import create_app
 from tests.db_helpers import drop_database, execute, recreate_database
+from tests.media_helpers import drop_bucket
 
 
 @pytest.fixture(scope="session")
@@ -75,8 +77,35 @@ def test_database_url(settings: Settings) -> Iterator[str]:
 def empty_database_url(test_database_url: str) -> str:
     """The test database with every content table emptied."""
     assert make_url(test_database_url).database.endswith("_test")  # pyright: ignore[reportOptionalMemberAccess]
-    execute(test_database_url, "TRUNCATE profile, stages, projects RESTART IDENTITY")
+    execute(
+        test_database_url,
+        "TRUNCATE profile, stages, projects, media_items RESTART IDENTITY",
+    )
     return test_database_url
+
+
+@pytest.fixture
+def cli_settings(
+    settings: Settings, empty_database_url: str, content_dir: Path, tmp_path: Path
+) -> Iterator[Settings]:
+    """Settings for running the seed command: test database, throwaway bucket.
+
+    The media folder is empty, so a normal run skips every role and a strict
+    run lists them. The bucket is the seed's to sweep, so it is never the
+    stack's own.
+    """
+    media = tmp_path / "media-source"
+    media.mkdir()
+    bucket = f"{settings.minio_bucket}-test-{uuid.uuid4().hex[:10]}"
+    yield settings.model_copy(
+        update={
+            "database_url": empty_database_url,
+            "content_dir": content_dir,
+            "media_source_dir": media,
+            "minio_bucket": bucket,
+        }
+    )
+    drop_bucket(settings, bucket)
 
 
 @pytest.fixture
