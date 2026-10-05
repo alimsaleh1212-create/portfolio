@@ -1,11 +1,15 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router";
 
-import { ReadinessPage } from "./ReadinessPage";
+import { App } from "./App";
+import { createQueryClient } from "./api/client";
 import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ReadinessPage />
+    <BrowserRouter>
+      <App queryClient={createQueryClient()} />
+    </BrowserRouter>
   </StrictMode>,
 );

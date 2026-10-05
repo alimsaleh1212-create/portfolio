@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-import { fetchReadiness, type ReadinessResult } from "./readiness";
+import { usePageTitle } from "../usePageTitle";
+import { fetchReadiness, type ReadinessResult } from "../api/readiness";
 
 const DEPENDENCIES = [
   { key: "postgres", label: "Postgres" },
@@ -11,6 +12,7 @@ const DEPENDENCIES = [
 type State = { kind: "loading" } | ReadinessResult;
 
 export function ReadinessPage() {
+  usePageTitle("Status");
   const [state, setState] = useState<State>({ kind: "loading" });
 
   useEffect(() => {
@@ -24,12 +26,13 @@ export function ReadinessPage() {
   }, []);
 
   return (
-    <main className="mx-auto max-w-md p-6">
-      <h1 className="text-2xl font-semibold">Ali Saleh</h1>
-      <h2 className="mt-4 text-lg">Readiness</h2>
-      {state.kind === "loading" && <p>Checking...</p>}
+    <div className="px-gutter md:px-gutter-wide py-section">
+     <div className="max-w-page mx-auto">
+      <h1 className="text-2xl font-semibold tracking-snug">Site status</h1>
+      <h2 className="text-ink-muted mt-4 text-lg">Readiness</h2>
+      {state.kind === "loading" && <p className="mt-2">Checking...</p>}
       {state.kind === "unreachable" && (
-        <p role="alert" className="mt-2 font-medium text-red-700">
+        <p role="alert" className="mt-2 text-alert font-medium">
           API unreachable
         </p>
       )}
@@ -42,7 +45,7 @@ export function ReadinessPage() {
               <li
                 key={key}
                 data-testid={key}
-                className={healthy ? "text-green-700" : "font-medium text-red-700"}
+                className={healthy ? "text-ink" : "text-alert font-medium"}
               >
                 {label}: {healthy ? "healthy" : `failing${check?.detail ? ` (${check.detail})` : ""}`}
               </li>
@@ -50,6 +53,7 @@ export function ReadinessPage() {
           })}
         </ul>
       )}
-    </main>
+     </div>
+    </div>
   );
 }
