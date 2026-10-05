@@ -2,7 +2,7 @@
 
 Ali Saleh's personal portfolio. It presents his career to recruiters and hiring managers as a hiker's climb up a 3D mountain. The full spec is GitHub issue #1; the vocabulary is in `CONTEXT.md`.
 
-Every service runs under Docker Compose. The text content (profile, Stages, Projects) is in `content/` and the API serves it; the frontend does not use it yet.
+Every service runs under Docker Compose. The text content (profile, Stages, Projects) is in `content/` and the API serves it; the frontend shows it on the Summary page at <http://localhost:8080/summary> (`/` redirects there until the Climb exists; `/status` shows readiness).
 
 | Folder | Holds |
 |---|---|
@@ -74,6 +74,8 @@ Frontend (`cd frontend`, run `npm ci` once):
 
 ```sh
 npm test
-npx vitest run src/ReadinessPage.test.tsx -t "unreachable"
+npx vitest run src/pages/ReadinessPage.test.tsx -t "unreachable"
 npm run lint && npm run typecheck
 ```
+
+`npm test` also checks that components use design tokens only (no literal colours, sizes or timings, no arbitrary Tailwind values) and that every text and surface colour pairing meets WCAG AA. The tokens are in `frontend/src/index.css`. Fonts (Geist) are self-hosted through `@fontsource` packages, and the site makes no request to any other origin.

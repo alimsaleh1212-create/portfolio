@@ -13,7 +13,7 @@ All Compose commands run from the repo root. Copy `.env.example` to `.env` first
 - Backend tests (real Postgres, Redis, MinIO, so run inside Compose): `docker compose -f compose.yaml -f compose.dev.yaml run --build --rm api pytest`
 - One backend test: `... run --build --rm api pytest tests/test_health.py::test_live_reports_ok`
 - Seed content by hand (the stack runs it at startup, non-strict): `docker compose run --rm seed python -m app.seed`. Add `--strict` to fail while any `PLACEHOLDER:` remains. In dev mode, add `-f compose.yaml -f compose.dev.yaml` before `run`.
-- Frontend tests: `cd frontend && npm test`. One test: `npx vitest run src/ReadinessPage.test.tsx -t "unreachable"`
+- Frontend tests: `cd frontend && npm test`. One test: `npx vitest run src/pages/ReadinessPage.test.tsx -t "unreachable"`. `npm test` includes the token and contrast checks
 - Backend lint and types (host, in `backend/`): `uv run ruff check . && uv run ruff format --check . && uv run pyright`
 - Frontend lint and types (in `frontend/`): `npm run lint && npm run typecheck`
 - The frontend uses npm.
@@ -29,7 +29,10 @@ Caddy is the only published port. It serves the built frontend (baked into its i
 - Content tests run against a throwaway `<POSTGRES_DB>_test` database (created and migrated per session in `tests/conftest.py`), never the stack's own data. The suite also checks that `content/` validates and has no phone-shaped text.
 - Logs are JSON through structlog, including uvicorn's. `middleware.py` binds `X-Request-ID` (accepted or generated) to every line and logs one `request` line per request. Uvicorn's access log is off because it prints client IPs, which ADR 0002 forbids.
 - Readiness (`/api/v1/health/ready`) pings each dependency with a short timeout and returns 503 with per-dependency status when any fails.
-- `frontend/src/`: `ReadinessPage` renders the readiness result; `readiness.ts` fetches it and treats anything other than a 200 or 503 report as "API unreachable".
+- Frontend (`frontend/src/`): React Router routes in `App.tsx` (`/` redirects to `/summary` until the Climb, ticket #14; `/status` is readiness; anything else is not-found), all inside `components/Shell.tsx` (header, nav, footer, skip link). `pages/` holds one component per route. `api/` is the typed client: `types.ts` mirrors the API responses, `client.ts` has the fetch wrapper (`ApiError`) and TanStack Query options, `useSummary.ts` combines profile and Projects into loading, error or ready. `readiness.ts` treats anything other than a 200 or 503 report as "API unreachable". Each route sets its title with `usePageTitle`.
+- Design tokens live in the `@theme` block of `frontend/src/index.css`: colour (night ground, one sunrise accent, derived from ADR 0001), type scale, spacing, radius, motion durations and easings, focus. The block resets Tailwind's defaults, so only these exist. **Tokens only**: components use token utilities (`text-ink`, `px-gutter`, `animate-rise`), never literals or arbitrary values such as `text-[13px]`, `#fff` or `300ms`. `src/design/tokens.test.ts` fails on any such literal in a component or in the stylesheet outside `@theme`; `src/design/contrast.test.ts` computes WCAG AA contrast for every text colour in use on each surface. Both run in `npm test`, so CI enforces them. Add a new colour to `@theme` before using it, and a new surface to `SURFACES` in the contrast test.
+- **No third-party requests from the browser** (ADR 0002): fonts are `@fontsource` packages bundled by Vite; no CDN, analytics, external images or scripts. Anything a page loads must come from our own origin.
+- Frontend tests render the real `App` in a memory router with `fetch` stubbed (`src/test/render.tsx`, fixtures in `src/test/fixtures.ts`).
 - Pyright runs in `standard` mode, not `strict`, because redis and Starlette's test client are not fully typed.
 
 ## Design
