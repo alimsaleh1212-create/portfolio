@@ -26,8 +26,9 @@ def test_replaces_unsafe_inbound_request_id() -> None:
 
 
 def test_every_log_line_is_json_with_the_request_id(
-    client: TestClient, capsys: pytest.CaptureFixture[str]
+    capsys: pytest.CaptureFixture[str], client: TestClient
 ) -> None:
+    # capsys must start before `client`, whose app binds its log handler to stdout.
     client.get("/api/v1/health/ready", headers={"X-Request-ID": "trace-me"})
 
     lines = [line for line in capsys.readouterr().out.splitlines() if line]

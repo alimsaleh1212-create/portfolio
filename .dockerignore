@@ -1,0 +1,9 @@
+.git
+.worktrees
+my_docs
+.env
+.env.*
+backend
+**/node_modules
+**/dist
+**/__pycache__

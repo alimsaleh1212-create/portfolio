@@ -6,10 +6,26 @@ Alembic) are rendered as one JSON object per line on stdout.
 
 import logging
 import sys
+from typing import TextIO
 
 import structlog
 
 _UVICORN_LOGGERS = ("uvicorn", "uvicorn.error", "uvicorn.access")
+
+
+class _StdoutHandler(logging.StreamHandler):
+    """Write to whatever `sys.stdout` is at emit time (keeps tests' capture working)."""
+
+    def __init__(self) -> None:
+        super().__init__(sys.stdout)
+
+    @property
+    def stream(self) -> TextIO:  # pyright: ignore[reportIncompatibleVariableOverride]
+        return sys.stdout
+
+    @stream.setter
+    def stream(self, _value: TextIO) -> None:
+        return
 
 
 def configure_logging(level: str = "INFO") -> None:
@@ -34,7 +50,7 @@ def configure_logging(level: str = "INFO") -> None:
         cache_logger_on_first_use=True,
     )
 
-    handler = logging.StreamHandler(sys.stdout)
+    handler = _StdoutHandler()
     handler.setFormatter(
         structlog.stdlib.ProcessorFormatter(
             foreign_pre_chain=shared_processors,
@@ -55,3 +71,9 @@ def configure_logging(level: str = "INFO") -> None:
         uvicorn_logger = logging.getLogger(name)
         uvicorn_logger.handlers.clear()
         uvicorn_logger.propagate = True
+
+    # Uvicorn's access line contains the client IP, which ADR 0002 keeps out of
+    # the logs. RequestIdMiddleware logs each request without it. Uvicorn skips
+    # access logging when this logger has no handlers to reach.
+    access_logger = logging.getLogger("uvicorn.access")
+    access_logger.propagate = False

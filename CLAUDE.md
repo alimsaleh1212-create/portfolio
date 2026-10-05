@@ -2,13 +2,30 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Current state
-
-The design is settled and the code is not yet written, so there are no build, lint, or test commands to run. The stack is decided: React and FastAPI with Postgres, Redis and MinIO in Docker Compose.
-
 Work is tracked in GitHub Issues. The milestone 1 spec is #1 and its tickets are its sub-issues; #2 and #3 outline the later milestones. Read the spec before proposing structure or tooling.
 
-When the first code lands, replace this section with the real commands (run, test, single test, lint) and an architecture overview.
+## Commands
+
+All Compose commands run from the repo root. Copy `.env.example` to `.env` first.
+
+- Run the stack: `docker compose up -d --build --wait`, then <http://localhost:8080> (`CADDY_PORT`). Stop with `docker compose down` (`-v` deletes data).
+- Dev mode (hot reload for API and frontend): `docker compose -f compose.yaml -f compose.dev.yaml up -d --wait`. The first start runs `npm ci` in the container and is slow.
+- Backend tests (real Postgres, Redis, MinIO, so run inside Compose): `docker compose -f compose.yaml -f compose.dev.yaml run --rm api pytest`
+- One backend test: `... run --rm api pytest tests/test_health.py::test_live_reports_ok`
+- Frontend tests: `cd frontend && npm test`. One test: `npx vitest run src/ReadinessPage.test.tsx -t "unreachable"`
+- Backend lint and types (host, in `backend/`): `uv run ruff check . && uv run ruff format --check . && uv run pyright`
+- Frontend lint and types (in `frontend/`): `npm run lint && npm run typecheck`
+- Use npm, not pnpm (pnpm is broken on this machine).
+
+## Architecture
+
+Caddy is the only published port. It serves the built frontend (baked into its image) and proxies `/api/` to FastAPI. In dev mode it proxies `/` to the Vite dev server instead. Postgres, Redis and MinIO are internal. Two one-shot services run at startup: `migrate` (Alembic) and `minio-init` (creates the bucket).
+
+- `backend/app/`: `api/v1/` routes call `services/`, which use probes and clients from `data/`. `deps.py` wires them with FastAPI dependency injection; `main.create_app` builds the clients at startup. Settings come from environment variables only (`config.py`).
+- Logs are JSON through structlog, including uvicorn's. `middleware.py` binds `X-Request-ID` (accepted or generated) to every line and logs one `request` line per request. Uvicorn's access log is off because it prints client IPs, which ADR 0002 forbids.
+- Readiness (`/api/v1/health/ready`) pings each dependency with a short timeout and returns 503 with per-dependency status when any fails.
+- `frontend/src/`: `ReadinessPage` renders the readiness result; `readiness.ts` fetches it and treats anything other than a 200 or 503 report as "API unreachable".
+- Pyright runs in `standard` mode, not `strict`, because redis and Starlette's test client are not fully typed.
 
 ## Design
 
