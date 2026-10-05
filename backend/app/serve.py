@@ -25,6 +25,7 @@ def main() -> None:
         # Our middleware logs requests without client IPs (ADR 0002).
         access_log=False,
         proxy_headers=False,
+        server_header=False,
     )
 
 
