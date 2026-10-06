@@ -42,3 +42,4 @@ npm-debug.log*
 # Playwright
 frontend/test-results/
 frontend/playwright-report/
+frontend/lighthouse-report/

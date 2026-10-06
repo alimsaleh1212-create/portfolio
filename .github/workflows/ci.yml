@@ -112,8 +112,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      # The browser tests send a message from every tier and size; the real limit (3 an hour per
+      # client) would stop the fourth, so this stack, and only this one, allows many.
       - name: Create .env from the example
-        run: cp .env.example .env
+        run: |
+          cp .env.example .env
+          echo "CONTACT_LIMIT_PER_HOUR=1000" >> .env
       # The production images, built with a layer cache that outlives the run: the API, the seed
       # (which installs ffmpeg), Caddy with the built frontend, and the pre-render job (which shares
       # Caddy's frontend build). Without the cache each run rebuilt all of them from nothing.
@@ -153,6 +157,24 @@ jobs:
         env:
           BASE_URL: http://localhost:8080
           CHROME_PATH: /usr/bin/google-chrome
+      # Lighthouse on a phone profile, for the landing page, the Summary and the landing page with
+      # the full 3D tier forced. It fails the build when Accessibility or Best Practices is under 95
+      # (stable, and the ticket's bar); the Performance score is only reported, because it moves by
+      # several points between runs on a shared runner (the time-to-text and layout-shift budgets
+      # are asserted by the browser tests instead).
+      - name: Run Lighthouse
+        working-directory: frontend
+        run: npm run lighthouse
+        env:
+          BASE_URL: http://localhost:8080
+          CHROME_PATH: /usr/bin/google-chrome
+      - name: Keep the Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: frontend/lighthouse-report
+          retention-days: 14
       - name: Keep the report
         if: failure()
         uses: actions/upload-artifact@v4
