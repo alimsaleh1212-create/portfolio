@@ -64,6 +64,9 @@ def contact_client(
             "smtp_host": None,
             "mail_sender": None,
             "mail_recipient": None,
+            # High, so one test's many messages from one address are not limited;
+            # the tests of the limit itself set their own.
+            "contact_limit_per_hour": 1000,
             **overrides,
         }
         client = TestClient(create_app(settings.model_copy(update=update)))
