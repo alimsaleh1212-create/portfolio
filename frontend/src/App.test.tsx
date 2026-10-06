@@ -8,13 +8,31 @@ afterEach(() => {
 });
 
 describe("routing and shell", () => {
-  it("sends / to the Summary", async () => {
+  it("shows the Climb at /", async () => {
     stubApi(answerWithContent);
     renderApp("/");
     expect(
       await screen.findByRole("heading", { level: 1, name: "Ali Saleh" }),
     ).toBeInTheDocument();
-    expect(document.title).toBe("Summary | Ali Saleh");
+    expect(document.title).toBe("Climb | Ali Saleh");
+  });
+
+  it("links the header to the Climb and the Summary, and the wordmark to /", () => {
+    stubApi(answerWithContent);
+    renderApp("/nowhere");
+    const main = screen.getByRole("navigation", { name: "Main" });
+    expect(within(main).getByRole("link", { name: "Climb" })).toHaveAttribute(
+      "href",
+      "/",
+    );
+    expect(within(main).getByRole("link", { name: "Summary" })).toHaveAttribute(
+      "href",
+      "/summary",
+    );
+    expect(screen.getByRole("link", { name: "Ali Saleh" })).toHaveAttribute(
+      "href",
+      "/",
+    );
   });
 
   it("shows readiness at /status", async () => {

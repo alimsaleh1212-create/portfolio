@@ -1,7 +1,8 @@
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
-import { Navigate, Route, Routes } from "react-router";
+import { Route, Routes } from "react-router";
 
 import { Shell } from "./components/Shell";
+import { ClimbPage } from "./pages/ClimbPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ProjectPage } from "./pages/ProjectPage";
 import { ReadinessPage } from "./pages/ReadinessPage";
@@ -13,8 +14,7 @@ export function App({ queryClient }: { queryClient: QueryClient }) {
     <QueryClientProvider client={queryClient}>
       <Routes>
         <Route element={<Shell />}>
-          {/* "/" belongs to the Climb (ticket #14). Until it exists, send Visitors to the Summary. */}
-          <Route index element={<Navigate to="/summary" replace />} />
+          <Route index element={<ClimbPage />} />
           <Route path="summary" element={<SummaryPage />} />
           <Route path="projects/:slug" element={<ProjectPage />} />
           <Route path="status" element={<ReadinessPage />} />

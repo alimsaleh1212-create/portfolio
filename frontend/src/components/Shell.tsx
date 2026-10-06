@@ -34,14 +34,16 @@ export function Shell() {
       <div aria-hidden="true" className="bg-horizon h-1" />
       <header className="px-gutter md:px-gutter-wide">
         <div className="max-w-page mx-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-1 py-4">
-          {/* "/" will be the Climb (ticket #14); until then the wordmark goes to the Summary. */}
           <Link
-            to="/summary"
+            to="/"
             className="rounded-control text-lg font-semibold tracking-snug press -mx-2 px-2 py-1"
           >
             Ali Saleh
           </Link>
           <nav aria-label="Main" className="-mx-3 flex">
+            <NavLink to="/" end className={navLinkClass}>
+              Climb
+            </NavLink>
             <NavLink to="/summary" className={navLinkClass}>
               Summary
             </NavLink>
@@ -51,7 +53,10 @@ export function Shell() {
       <main id="main" ref={mainRef} tabIndex={-1} className="flex-1">
         <Outlet />
       </main>
-      <footer className="border-line text-ink-muted border-t px-gutter md:px-gutter-wide">
+      {/* On the Climb the footer continues the Summit's sky, so the page does not end on a seam. */}
+      <footer
+        className={`border-line text-ink-muted border-t px-gutter md:px-gutter-wide ${pathname === "/" ? "bg-light-summit max-lg:pb-16" : ""}`}
+      >
         <div className="max-w-page mx-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-6 text-sm">
           <p>Ali Saleh, AI development specialist.</p>
           <a href="#main" className="link">
