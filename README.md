@@ -10,7 +10,7 @@ Every service runs under Docker Compose. The text content (profile, Stages, Proj
 | `frontend/` | Vite, React, TypeScript, Tailwind (npm) |
 | `content/` | Text content in YAML: `profile.yaml`, `stages.yaml`, `projects.yaml`, and `media.yaml` (the media manifest) |
 | `my_docs/` | The source Portrait, Video CV and CV PDF (git-ignored; only `.gitkeep` is tracked) |
-| `infra/` | Caddy configuration and image |
+| `infra/` | Caddy configuration and image; `infra/observability/` has the configuration and Grafana dashboards of the observability profile |
 
 ## Quickstart
 
@@ -36,7 +36,7 @@ The five read endpoints are cached in Redis and carry a strong `ETag` with `Cach
 
 Caddy serves the hashed files in `/assets/` with a one-year `immutable` header, serves the HTML document and favicon so browsers revalidate them, and compresses text and JSON.
 
-Cache hit, miss and error counts are at `http://api:9100/metrics` inside the Compose network (not published, not proxied by Caddy). Clear the cache by hand with `docker compose run --rm api python -m app.clear_cache`; it leaves the Visitor salt and rate-limit counters alone. Tunables: `CACHE_TTL_SECONDS`, `CACHE_TIMEOUT_SECONDS`, `METRICS_PORT`.
+Cache hit, miss and error counts are at `http://api:9100/metrics` inside the Compose network (not published, not proxied by Caddy). Request count and duration by route and status, and the database pool's state, are in the same endpoint. Clear the cache by hand with `docker compose run --rm api python -m app.clear_cache`; it leaves the Visitor salt and rate-limit counters alone. Tunables: `CACHE_TTL_SECONDS`, `CACHE_TIMEOUT_SECONDS`, `METRICS_PORT`.
 
 Stop with `docker compose down`; add `-v` to also delete the data volumes.
 
@@ -56,7 +56,7 @@ The site records each Visit (one page load) and how far up the Climb it got, and
 - Answers: `201 {"received": true}`; `422` with `{"errors": {"<field>": "<message>"}}` (names up to 100 characters, a real address up to 254, a message of 10 to 4000 characters; line breaks and control codes are refused in the name and address, and the answer never echoes the input); `429` with `Retry-After` past 3 messages per client per hour (`CONTACT_LIMIT_PER_HOUR`); bodies over 32 KiB get `413`.
 - The honeypot is an extra `website` field. A filled one gets the same `201` and nothing is stored or emailed.
 - Email delivery is on only when `SMTP_HOST`, `MAIL_SENDER` and `MAIL_RECIPIENT` are all set. Also `SMTP_PORT` (587), `SMTP_USERNAME` and `SMTP_PASSWORD`, `SMTP_SECURITY` (`starttls`, `tls` or `none`). The message goes to `MAIL_RECIPIENT` with the Visitor's address as Reply-To. It is one attempt after the response is sent, so a mail failure never fails the request or loses the stored message. They are all listed, commented out, in `.env.example`.
-- Logs record the message ID and whether delivery was attempted and succeeded, never the name, address or text. To read messages without email, query the table (a Grafana panel comes with ticket #13).
+- Logs record the message ID and whether delivery was attempted and succeeded, never the name, address or text. To read messages without email, query the table or open the Contact messages panel in Grafana (see Observability).
 
 ## Content and the seed command
 
@@ -83,6 +83,49 @@ The Portrait, the Video CV and the CV PDF are not in git (the repo is public and
 - **Unchanged means untouched**: the seed runs at every startup. For each role it hashes the source file and the processing settings (widths, qualities, encoder arguments); when both match what is recorded in `media_items` and the objects are in the bucket, it uploads and encodes nothing. A changed file replaces its objects and removes the old ones.
 - **Missing files**: a role whose file is not in the folder is skipped with a warning, and the Summary leaves it out. `python -m app.seed --strict` fails and names every missing file.
 - **Serving**: objects live in the MinIO bucket under content-hashed keys. Anonymous visitors may read objects and nothing else (no listing, no writes). Caddy serves them at `/media/<key>` with `Cache-Control: public, max-age=31536000, immutable`, passes range requests through, allows only GET, HEAD and OPTIONS, and strips MinIO's own headers. MinIO is not published on the host.
+
+## Observability (optional)
+
+An optional Compose profile adds Prometheus (metrics), Loki (logs), Tempo (traces), Alloy (the one collector) and Grafana. With the profile off the site runs exactly as before: no extra container and nothing tries to export anything. This is also where Ali reads his Visits, their Progress and his contact messages, since the site has no admin panel.
+
+Turn it on by setting these in `.env` (see `.env.example`; there is no default password, and the profile refuses to start without both):
+
+```sh
+GRAFANA_ADMIN_PASSWORD=...        # Grafana's admin login (user `admin`)
+GRAFANA_DB_PASSWORD=...           # password of the read-only Postgres role Grafana uses
+OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318   # sends the API's traces to the collector
+```
+
+```sh
+docker compose --profile observability up -d --build --wait
+```
+
+Open <http://localhost:3000> (`GRAFANA_PORT`) and sign in as `admin`. Grafana is bound to localhost only, with anonymous access and sign-up off, and is not behind Caddy. Prometheus, Loki, Tempo and the collector are not published. If a password is missing, the `grafana-setup` container exits and says which one (`docker compose --profile observability logs grafana-setup`). Grafana's admin password is read only when Grafana first creates its database; to change it later, run `docker compose --profile observability exec grafana grafana cli admin reset-admin-password NEW`. Stop with `docker compose --profile observability down` (add `-v` to delete the data).
+
+Both dashboards, all four data sources (Prometheus, Loki, Tempo, Postgres) and their links are provisioned from files in `infra/observability/grafana/`, so there is nothing to set up by hand. Edit the JSON files, not the dashboards in the browser.
+
+**Visits and Progress** (the home dashboard; every panel follows the time range at the top, in UTC days):
+
+| Panel | Shows |
+|---|---|
+| Visits, Projects opened, CV downloads, Contact messages sent | Totals in the range |
+| Visits per day | Visits that started each day |
+| Unique Visitors per day | Distinct daily Visitor hashes per day (a returning Visitor counts once per day) |
+| Visits per Stage (Progress funnel) | For each Stage in Climb order, the Visits whose Progress is that Stage or higher |
+| Referring sites | Referrer hosts, top 10; (direct) means none |
+| Device classes, Tiers served | Phone, tablet, desktop; full, light, still |
+| Projects opened by Project | Every Project with how often it was opened |
+| Contact messages | Date, name, address and text of each message, newest first |
+
+**Application health** (last hour, refreshes every 30 s; a Route filter at the top): requests per second, error rate (5xx), p95 latency and cache hit rate as headline numbers; request rate by route; 5xx and 4xx share of requests; p95 latency by route and a p50/p95/p99 table by route; cache hit rate by endpoint; database connections in use and idle against the pool limit; recent error logs. A log line with a `trace_id` has an "Open trace" link to its trace in Tempo.
+
+Grafana reads Postgres as `grafana_reader`, a role the profile creates (or updates, on a database that already has it) every time it starts. It can `SELECT` from the Visit tables and views, the content tables and `contact_messages`, and can write nothing. Retention is short and local: metrics 7 days, logs 7 days, traces 3 days, on Docker volumes. Memory limits: Prometheus 256 MB, Loki 320 MB, Tempo 320 MB, Grafana 320 MB, collector 192 MB, Docker proxy 32 MB.
+
+Container logs reach Loki through the collector, which asks the Docker API for the logs of this Compose project's containers. It reaches the API only through `docker-proxy`, which holds the Docker socket read-only and lets through only reads of containers and networks.
+
+Telemetry follows the same privacy rules as logs (ADR 0002): no client address, user agent, referrer, Visitor hash, salt, rate-limit key or contact message text in any span, metric label or log line. The traces use hand-made spans with a fixed attribute list instead of the stock instrumentation, and metric labels use route templates (`/api/v1/projects/{slug}`), never raw paths.
+
+Check the profile's files without starting it: `cd backend && uv run python ../infra/observability/check_config.py` (CI runs it).
 
 ## Development mode
 
