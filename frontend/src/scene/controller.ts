@@ -14,6 +14,8 @@ import {
   journeyAt,
   poseAt,
   progressAt,
+  HIKER_FRAME,
+  keepInFrame,
   stepJourney,
   trailTAt,
   type Pose,
@@ -289,6 +291,13 @@ export class SceneController {
     camera.fov = fieldOfView(pose.fov, camera.aspect);
     camera.lookAt(pose.target);
     // Shift the picture so the mountain's interest falls on the side without text.
+    // On a narrow screen the Hiker is also kept in the frame (see `keepInFrame`).
+    if (this.hiker && !this.manual && size.width < NARROW) {
+      camera.clearViewOffset();
+      camera.updateMatrixWorld();
+      const feet = this.hiker.position.clone().project(camera);
+      pose.shift = keepInFrame(feet, pose.shift, HIKER_FRAME);
+    }
     camera.setViewOffset(
       size.width,
       size.height,

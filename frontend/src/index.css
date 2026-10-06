@@ -59,9 +59,9 @@
   --color-light-high-camp: #43254f;
   --color-light-summit: #5a2848;
   --color-light-ground: #1c1424;
-  --color-ember-trailhead: #1a2a66;
-  --color-ember-long-approach: #2f3a86;
-  --color-ember-steep-switch: #6a4396;
+  --color-ember-trailhead: #213a8c;
+  --color-ember-long-approach: #3a4aa0;
+  --color-ember-steep-switch: #7d4cac;
   --color-ember-ridge: #b0507e;
   --color-ember-high-camp: #e8745c;
   --color-first-light: #ffc48a;
@@ -247,40 +247,40 @@
    */
   --background-image-scrim-left: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--color-ground) 86%, transparent),
-    color-mix(in srgb, var(--color-ground) 72%, transparent) 50%,
-    color-mix(in srgb, var(--color-ground) 38%, transparent) 62%,
-    transparent 78%
+    color-mix(in srgb, var(--color-ground) 80%, transparent),
+    color-mix(in srgb, var(--color-ground) 64%, transparent) 40%,
+    color-mix(in srgb, var(--color-ground) 24%, transparent) 54%,
+    transparent 68%
   );
   --background-image-scrim-right: linear-gradient(
     270deg,
-    color-mix(in srgb, var(--color-ground) 86%, transparent),
-    color-mix(in srgb, var(--color-ground) 72%, transparent) 50%,
-    color-mix(in srgb, var(--color-ground) 38%, transparent) 62%,
-    transparent 78%
+    color-mix(in srgb, var(--color-ground) 80%, transparent),
+    color-mix(in srgb, var(--color-ground) 64%, transparent) 40%,
+    color-mix(in srgb, var(--color-ground) 24%, transparent) 54%,
+    transparent 68%
   );
   /* A narrower scrim, for a Stage whose text column is short and whose cards sit over the scene. */
   --background-image-scrim-edge: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--color-ground) 86%, transparent),
-    color-mix(in srgb, var(--color-ground) 70%, transparent) 30%,
-    transparent 48%
+    color-mix(in srgb, var(--color-ground) 80%, transparent),
+    color-mix(in srgb, var(--color-ground) 62%, transparent) 26%,
+    transparent 40%
   );
   --background-image-scrim-veil: linear-gradient(
-    color-mix(in srgb, var(--color-ground) 50%, transparent),
-    color-mix(in srgb, var(--color-ground) 50%, transparent)
+    color-mix(in srgb, var(--color-ground) 68%, transparent),
+    color-mix(in srgb, var(--color-ground) 68%, transparent)
   );
   /* The opening screen on a narrow screen: the text is at the top, the mountain below it. */
   --background-image-scrim-top: linear-gradient(
-    color-mix(in srgb, var(--color-ground) 76%, transparent),
-    color-mix(in srgb, var(--color-ground) 56%, transparent) 46%,
-    transparent 84%
+    color-mix(in srgb, var(--color-ground) 70%, transparent),
+    color-mix(in srgb, var(--color-ground) 48%, transparent) 42%,
+    transparent 70%
   );
   /* A soft shade down the right edge, behind the altitude meter's rail. */
   --background-image-rail-shade: linear-gradient(
     270deg,
-    color-mix(in srgb, var(--color-ground) 82%, transparent),
-    color-mix(in srgb, var(--color-ground) 60%, transparent) 55%,
+    color-mix(in srgb, var(--color-ground) 72%, transparent),
+    color-mix(in srgb, var(--color-ground) 44%, transparent) 50%,
     transparent
   );
   /* The scene's last stretch settles into the slope the contact section sits on. */
@@ -469,6 +469,25 @@
     transparent,
     black 14%,
     black 86%,
+    transparent
+  );
+}
+
+/*
+ * On a narrow screen the text runs edge to edge, so between one Stage and the next the page
+ * leaves an open band where nothing covers the mountain and the Hiker can be seen.
+ */
+@utility scene-band {
+  height: 46dvh;
+}
+
+/* The same, with a fade of fixed length, for a backing that must be solid right up to the text. */
+@utility scrim-fade-fixed {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black var(--spacing-section),
+    black calc(100% - var(--spacing-section)),
     transparent
   );
 }
