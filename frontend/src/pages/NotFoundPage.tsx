@@ -1,9 +1,10 @@
 import { Link } from "react-router";
 
-import { usePageTitle } from "../usePageTitle";
+import { unlistedHead } from "../head/model";
+import { useHead } from "../head/useHead";
 
 export function NotFoundPage() {
-  usePageTitle("Page not found");
+  useHead(unlistedHead("Page not found"));
   return (
     <div className="px-gutter md:px-gutter-wide py-section md:py-section-wide">
       <div className="max-w-page mx-auto">

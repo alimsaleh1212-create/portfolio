@@ -27,6 +27,8 @@ htmlcov/
 # Node
 node_modules/
 dist/
+dist-prerender/
+frontend/prerendered/
 *.tsbuildinfo
 coverage/
 npm-debug.log*

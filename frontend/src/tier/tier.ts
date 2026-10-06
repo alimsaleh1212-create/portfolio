@@ -45,9 +45,18 @@ export function subscribeTier(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
+/**
+ * What the pre-render, and the browser while it hydrates, take the tier to be. The server cannot
+ * know the device, so the page it writes has no backdrop; once hydrated the browser's own
+ * decision replaces this at once. (Light and not full, so nothing here ever starts a scene.)
+ */
+function getServerTier(): Tier {
+  return "light";
+}
+
 /** React: the tier, re-rendering when it is lowered. */
 export function useTier(): Tier {
-  return useSyncExternalStore(subscribeTier, getTier, getTier);
+  return useSyncExternalStore(subscribeTier, getTier, getServerTier);
 }
 
 /**

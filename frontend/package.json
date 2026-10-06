@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && npm run build:prerender",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "test": "vitest run",
     "stills": "node scripts/capture-stills.mjs",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "build:prerender": "vite build --ssr src/prerender/run.ts --outDir dist-prerender",
+    "prerender": "node dist-prerender/run.js"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
