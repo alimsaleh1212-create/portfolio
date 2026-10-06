@@ -119,7 +119,7 @@ Both dashboards, all four data sources (Prometheus, Loki, Tempo, Postgres) and t
 
 **Application health** (last hour, refreshes every 30 s; a Route filter at the top): requests per second, error rate (5xx), p95 latency and cache hit rate as headline numbers; request rate by route; 5xx and 4xx share of requests; p95 latency by route and a p50/p95/p99 table by route; cache hit rate by endpoint; database connections in use and idle against the pool limit; recent error logs. A log line with a `trace_id` has an "Open trace" link to its trace in Tempo.
 
-Grafana reads Postgres as `grafana_reader`, a role the profile creates (or updates, on a database that already has it) every time it starts. It can `SELECT` from the Visit tables and views, the content tables and `contact_messages`, and can write nothing. Retention is short and local: metrics 7 days, logs 7 days, traces 3 days, on Docker volumes. Memory limits: Prometheus 256 MB, Loki 320 MB, Tempo 320 MB, Grafana 320 MB, collector 192 MB, Docker proxy 32 MB.
+Grafana reads Postgres as `grafana_reader`, a role the profile creates (or updates, on a database that already has it) every time it starts. It can `SELECT` from the Visit tables and views, the content tables and `contact_messages`, and can write nothing. Retention is short and local: metrics 7 days, logs 7 days, traces 3 days, on Docker volumes. Memory limits: Prometheus 256 MB, Loki 320 MB, Tempo 320 MB, Grafana 384 MB, collector 192 MB, Docker proxy 64 MB.
 
 Container logs reach Loki through the collector, which asks the Docker API for the logs of this Compose project's containers. It reaches the API only through `docker-proxy`, which holds the Docker socket read-only and lets through only reads of containers and networks.
 

@@ -162,7 +162,22 @@ def create_app(
             provider.shutdown()
         logger.info("shutdown_complete")
 
-    app = FastAPI(title="Portfolio API", lifespan=lifespan)
+    # FastAPI 0.142 has its own OpenTelemetry support. With an OTLP endpoint in
+    # the environment it would add exporters for traces, metrics and logs, and its
+    # records can carry validation input values and exception messages, which
+    # hold what a Visitor typed. Everything is off: app/telemetry.py makes the
+    # spans, with a fixed attribute list.
+    app = FastAPI(
+        title="Portfolio API",
+        lifespan=lifespan,
+        telemetry={
+            "auto_configure": False,
+            "tracing": False,
+            "metrics": False,
+            "logs": False,
+            "operation_spans": False,
+        },
+    )
     # Added first, so it sits inside the request ID middleware and its 413 is logged.
     app.add_middleware(
         BodyLimitMiddleware,

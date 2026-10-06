@@ -274,9 +274,14 @@ services:
       CONTAINERS: 1
       NETWORKS: 1
       POST: 0
-    mem_limit: 32m
+    mem_limit: 64m
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "2375"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   # The one collector: ships this project's container logs to Loki and receives
   # the API's traces for Tempo.
@@ -298,7 +303,7 @@ services:
       - collector_data:/var/lib/alloy/data
     depends_on:
       docker-proxy:
-        condition: service_started
+        condition: service_healthy
       loki:
         condition: service_healthy
       tempo:
@@ -362,8 +367,8 @@ services:
       GRAFANA_DB_USER: ${GRAFANA_DB_USER:-grafana_reader}
       GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD:-}
       POSTGRES_DB: ${POSTGRES_DB}
-      GOMEMLIMIT: 250MiB
-    mem_limit: 320m
+      GOMEMLIMIT: 300MiB
+    mem_limit: 384m
     # Localhost only: reachable from this machine, not from the network.
     ports:
       - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"

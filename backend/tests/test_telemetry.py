@@ -285,3 +285,21 @@ def test_with_an_endpoint_the_exporter_posts_to_the_traces_path() -> None:
     [processor] = provider._active_span_processor._span_processors  # pyright: ignore[reportAttributeAccessIssue,reportPrivateUsage]
     assert processor.span_exporter._endpoint == "http://collector:4318/v1/traces"  # pyright: ignore[reportAttributeAccessIssue]
     provider.shutdown()
+
+
+def test_fastapis_own_telemetry_stays_off_even_with_an_endpoint_in_the_environment(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # FastAPI would otherwise attach exporters for traces, metrics and logs to
+    # the global providers, with validation input and exception messages in them.
+    from fastapi.telemetry import _runtime  # pyright: ignore[reportMissingImports]
+    from opentelemetry import trace
+
+    monkeypatch.setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector.invalid:4318")
+    before = list(_runtime._owned)  # pyright: ignore[reportPrivateUsage]
+
+    with TestClient(create_app(settings)) as client:
+        client.get("/api/v1/health/live")
+
+    assert list(_runtime._owned) == before  # pyright: ignore[reportPrivateUsage]
+    assert not isinstance(trace.get_tracer_provider(), TracerProvider)
