@@ -57,9 +57,7 @@ for (const tier of TIERS) {
             order.push(key);
             if (key === "ridge") {
               // A Project opens from the Ridge, and the way back lands on the Ridge.
-              const tile = page
-                .locator("#ridge a[href^='/projects/']")
-                .first();
+              const tile = page.locator("#ridge a[href^='/projects/']").first();
               const slug = (await tile.getAttribute("href"))!;
               await tile.click();
               await expect(page).toHaveURL(new RegExp(`${slug}$`));
