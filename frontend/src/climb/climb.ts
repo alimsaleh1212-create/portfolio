@@ -11,6 +11,10 @@
  *   current once its top edge has risen to the middle of the screen.
  * - `stages`: each Stage's place along the Climb as a progress value (the Trailhead is 0,
  *   High Camp is 1), in Climb order.
+ * - `lead` and `tail`: the two stretches `progress` leaves out. `lead` is 0 to 1 across the
+ *   opening screen (1 once the Trailhead's top edge is at the top of the screen); `tail` is
+ *   0 to 1 as the Summit section slides up from the bottom of the screen to the top. The 3D
+ *   camera uses them to arrive at the Trailhead and to look up at the Summit.
  *
  * Read it outside React with `getClimb()` and `subscribeClimb()` (a render loop can do
  * this every frame without re-rendering anything). Inside React, prefer `useCurrentStage()`
@@ -32,6 +36,10 @@ export interface ClimbState {
   /** Key of the Stage the Visitor is in, or null before the Trailhead. */
   stage: string | null;
   stages: StagePosition[];
+  /** 0 to 1 across the opening screen, before the Trailhead. */
+  lead: number;
+  /** 0 to 1 as the Summit section comes up the screen, after High Camp. */
+  tail: number;
 }
 
 /** A Stage is current once its top edge is this far up from the bottom of the screen. */
@@ -40,7 +48,13 @@ const CURRENT_LINE = 0.5;
 const REACH_LINE = 0.75;
 const EPSILON = 0.0005;
 
-const IDLE: ClimbState = { progress: 0, stage: null, stages: [] };
+const IDLE: ClimbState = {
+  progress: 0,
+  stage: null,
+  stages: [],
+  lead: 0,
+  tail: 0,
+};
 
 let state: ClimbState = IDLE;
 const listeners = new Set<() => void>();
@@ -73,13 +87,15 @@ export function prefersReducedMotion(): boolean {
 
 /**
  * Where the document is, from the Stages' elements (found by id, the Stage key).
- * Pure so it can be tested: `tops` are the Stages' top edges in document coordinates.
+ * Pure so it can be tested: `tops` are the Stages' top edges in document coordinates, and
+ * `end` is where the Stages end (the top edge of the Summit section), if the page has one.
  */
 export function readClimb(
   keys: string[],
   tops: number[],
   scrollY: number,
   viewport: number,
+  end?: number,
 ): ClimbState {
   const first = tops[0] ?? 0;
   const span = (tops[tops.length - 1] ?? 0) - first;
@@ -95,6 +111,9 @@ export function readClimb(
     progress: span > 0 ? clamp((scrollY - first) / span) : 0,
     stage: current,
     stages,
+    lead: first > 0 ? clamp(scrollY / first) : 1,
+    tail:
+      end === undefined ? 0 : clamp((scrollY - (end - viewport)) / viewport),
   };
 }
 
@@ -155,14 +174,22 @@ export function trackClimb(
     const measured = tops();
     if (!measured) return;
     const viewport = window.innerHeight;
-    const next = readClimb(keys, measured, window.scrollY, viewport);
+    const summit = document.getElementById("summit");
+    const end = summit
+      ? summit.getBoundingClientRect().top + window.scrollY
+      : undefined;
+    const next = readClimb(keys, measured, window.scrollY, viewport, end);
     if (
       Math.abs(next.progress - state.progress) >= EPSILON ||
+      Math.abs(next.lead - state.lead) >= EPSILON ||
+      Math.abs(next.tail - state.tail) >= EPSILON ||
       next.stage !== state.stage ||
       !sameStages(next.stages, state.stages)
     ) {
       publish({
         progress: next.progress,
+        lead: next.lead,
+        tail: next.tail,
         stage: next.stage,
         stages: sameStages(next.stages, state.stages)
           ? state.stages

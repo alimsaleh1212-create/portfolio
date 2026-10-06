@@ -37,6 +37,34 @@ describe("readClimb", () => {
   });
 });
 
+describe("readClimb, the stretches either side of the Stages", () => {
+  it("runs `lead` from 0 at the top to 1 when the first Stage reaches the top", () => {
+    expect(readClimb(keys, tops, 0, 800).lead).toBe(0);
+    expect(readClimb(keys, tops, 500, 800).lead).toBe(0.5);
+    expect(readClimb(keys, tops, 1000, 800).lead).toBe(1);
+    expect(readClimb(keys, tops, 3000, 800).lead).toBe(1);
+  });
+
+  it("leaves `progress` at 0 while `lead` runs", () => {
+    const state = readClimb(keys, tops, 500, 800);
+    expect(state.progress).toBe(0);
+    expect(state.lead).toBeGreaterThan(0);
+  });
+
+  it("runs `tail` as the Summit section comes up the screen after the last Stage", () => {
+    const end = 5200;
+    expect(readClimb(keys, tops, 4000, 800, end).tail).toBe(0);
+    expect(readClimb(keys, tops, end - 800, 800, end).tail).toBe(0);
+    expect(readClimb(keys, tops, end - 400, 800, end).tail).toBe(0.5);
+    expect(readClimb(keys, tops, end, 800, end).tail).toBe(1);
+    expect(readClimb(keys, tops, end + 900, 800, end).tail).toBe(1);
+  });
+
+  it("has no `tail` on a page without a Summit section", () => {
+    expect(readClimb(keys, tops, 6000, 800).tail).toBe(0);
+  });
+});
+
 describe("highestReached", () => {
   it("counts no Stage below the fold of an unscrolled page", () => {
     expect(highestReached(tops, 0, 800)).toBe(-1);
