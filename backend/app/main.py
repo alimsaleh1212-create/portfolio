@@ -30,7 +30,13 @@ from app.data.storage import MinioProbe, create_s3_client
 from app.data.visitor_salt import Clock, DailySaltStore, utc_now
 from app.data.visits_repo import VisitRepository
 from app.logging import configure_logging
-from app.metrics import CacheMetrics, HttpMetrics, PoolMetrics, serve_metrics
+from app.metrics import (
+    KNOWN_METHODS,
+    CacheMetrics,
+    HttpMetrics,
+    PoolMetrics,
+    serve_metrics,
+)
 from app.middleware import BodyLimitMiddleware, NoStoreMiddleware, RequestIdMiddleware
 from app.services.clients import ClientHasher
 from app.services.contact import ContactService
@@ -68,6 +74,21 @@ def mail_settings(settings: Settings) -> MailSettings | None:
         username=settings.smtp_username,
         password=settings.smtp_password,
     )
+
+
+def documented_routes(app: FastAPI) -> dict[str, list[str]]:
+    """Return each route template with its HTTP methods, from the OpenAPI schema.
+
+    The schema has the full templates (`/api/v1/projects/{slug}`), which the
+    router itself keeps relative to the router that holds them.
+    """
+    paths: dict[str, dict[str, object]] = app.openapi().get("paths", {})
+    return {
+        path: [
+            method.upper() for method in operations if method.upper() in KNOWN_METHODS
+        ]
+        for path, operations in paths.items()
+    }
 
 
 def create_app(
@@ -167,6 +188,7 @@ def create_app(
     # records can carry validation input values and exception messages, which
     # hold what a Visitor typed. Everything is off: app/telemetry.py makes the
     # spans, with a fixed attribute list.
+    http_metrics = HttpMetrics(registry)
     app = FastAPI(
         title="Portfolio API",
         lifespan=lifespan,
@@ -189,9 +211,7 @@ def create_app(
     # Outermost, so even an answer made by the layers above gets its header.
     app.add_middleware(NoStoreMiddleware)
     # Outermost of all: its span is current for the request's log lines.
-    app.add_middleware(
-        TelemetryMiddleware, tracer=tracer, metrics=HttpMetrics(registry)
-    )
+    app.add_middleware(TelemetryMiddleware, tracer=tracer, metrics=http_metrics)
 
     api_v1 = APIRouter(prefix="/api/v1")
     api_v1.include_router(health.router)
@@ -201,4 +221,5 @@ def create_app(
     api_v1.include_router(contact.router)
     app.include_router(api_v1)
     app.state.metrics_registry = registry
+    http_metrics.prime(documented_routes(app))
     return app

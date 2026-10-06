@@ -39,14 +39,13 @@ from sqlalchemy.engine.interfaces import ExceptionContext
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app.metrics import HttpMetrics, clean_method
+from app.metrics import UNMATCHED, HttpMetrics, clean_method
 
 logger = structlog.get_logger(__name__)
 
 SERVICE_NAME = "portfolio-api"
 # The container healthcheck calls this every few seconds; tracing it is noise.
 UNTRACED_PATHS = frozenset({"/api/v1/health/live"})
-UNMATCHED_ROUTE = "unmatched"
 _SQL_VERBS = frozenset({"SELECT", "INSERT", "UPDATE", "DELETE"})
 _SPANS_KEY = "telemetry_spans"
 
@@ -211,7 +210,7 @@ def route_template(scope: Scope) -> str:
     route = scope.get("route")
     template: str | None = getattr(route, "path_format", None)
     if not template:
-        return UNMATCHED_ROUTE
+        return UNMATCHED
     pattern = getattr(getattr(route, "path_regex", None), "pattern", "")
     match = re.search(pattern.removeprefix("^"), scope["path"])
     return scope["path"][: match.start()] + template if match else template

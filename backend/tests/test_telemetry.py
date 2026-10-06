@@ -303,3 +303,19 @@ def test_fastapis_own_telemetry_stays_off_even_with_an_endpoint_in_the_environme
 
     assert list(_runtime._owned) == before  # pyright: ignore[reportPrivateUsage]
     assert not isinstance(trace.get_tracer_provider(), TracerProvider)
+
+
+def test_every_documented_route_and_status_starts_at_zero(
+    traced_client: TestClient,
+) -> None:
+    # Without a zero to start from, Prometheus would miss the first 500.
+    text = metrics_text(traced_client)
+
+    assert (
+        'portfolio_http_requests_total{method="POST",route="/api/v1/visits",'
+        'status="500"} 0.0' in text
+    )
+    assert (
+        'portfolio_http_requests_total{method="GET",route="/api/v1/projects/{slug}",'
+        'status="404"} 0.0' in text
+    )

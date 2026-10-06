@@ -8,7 +8,7 @@ endpoint name from a fixed list and nothing about a Visitor.
 
 import asyncio
 import contextlib
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterable, Mapping
 
 import structlog
 import uvicorn
@@ -43,6 +43,14 @@ KNOWN_METHODS = frozenset({"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPT
 LATENCY_BUCKETS = (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)
 
 
+# Series created at startup with a count of zero. Prometheus never counts the
+# first value of a series it first sees already above zero, so without this the
+# first 500 (or the first request to a route) would be missing from every rate.
+PRIMED_STATUSES = (200, 201, 204, 304, 404, 413, 422, 429, 500, 503)
+PRIMED_LATENCY_STATUSES = (200, 201, 204, 422, 500)
+UNMATCHED = "unmatched"
+
+
 def clean_method(method: str) -> str:
     """Return the method if it is a standard one, else "OTHER"."""
     method = method.upper()
@@ -71,6 +79,20 @@ class HttpMetrics:
             buckets=LATENCY_BUCKETS,
             registry=registry,
         )
+
+    def prime(self, routes: Mapping[str, Iterable[str]]) -> None:
+        """Create the series the API can answer with, so the first one is counted.
+
+        Args:
+            routes: Route template to the HTTP methods it accepts.
+        """
+        every = {**routes, UNMATCHED: ("GET", "POST")}
+        for route, methods in every.items():
+            for method in methods:
+                for status in PRIMED_STATUSES:
+                    self._requests.labels(method, route, str(status))
+                for status in PRIMED_LATENCY_STATUSES:
+                    self._duration.labels(method, route, str(status))
 
     def observe(self, method: str, route: str, status: int, seconds: float) -> None:
         """Record one answered request."""
