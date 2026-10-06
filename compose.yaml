@@ -274,6 +274,7 @@ services:
       CONTAINERS: 1
       NETWORKS: 1
       POST: 0
+      LOG_LEVEL: warning
     mem_limit: 64m
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
