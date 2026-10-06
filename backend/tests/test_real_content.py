@@ -54,11 +54,11 @@ def test_real_content_has_six_projects(settings: Settings) -> None:
 
 
 def test_nothing_under_content_looks_like_a_phone_number(settings: Settings) -> None:
-    # The Hiker's model is a binary file; every other file is text.
+    # The Hiker's model and the stills are binary; every other file is text.
     files = [
         path
         for path in Path(settings.content_dir).rglob("*")
-        if path.is_file() and path.suffix != ".glb"
+        if path.is_file() and path.suffix not in {".glb", ".png"}
     ]
 
     assert files
@@ -66,3 +66,27 @@ def test_nothing_under_content_looks_like_a_phone_number(settings: Settings) -> 
         str(path) for path in files if looks_like_phone_number(path.read_text())
     ]
     assert offenders == []
+
+
+def test_the_real_stills_are_the_fourteen_pictures(settings: Settings) -> None:
+    from app.media.manifest import load_manifest
+    from app.media.prepare import still_sources
+
+    manifest = load_manifest(Path(settings.content_dir))
+    assert manifest.stills is not None
+    found = {
+        name
+        for _, name, _ in still_sources(
+            Path(settings.content_dir) / manifest.stills.folder
+        )
+    }
+    positions = [
+        "opening",
+        "trailhead",
+        "long-approach",
+        "steep-switch",
+        "ridge",
+        "high-camp",
+        "summit",
+    ]
+    assert found == {f"{p}-{c}" for p in positions for c in ("wide", "narrow")}
