@@ -153,7 +153,7 @@ jobs:
         run: npm ci
       - name: Run the browser tests
         working-directory: frontend
-        run: npm run e2e
+        run: npm run e2e:core
         env:
           BASE_URL: http://localhost:8080
           CHROME_PATH: /usr/bin/google-chrome
@@ -173,7 +173,7 @@ jobs:
         run: docker compose down -v
 
   lighthouse:
-    name: Lighthouse (phone profile, built site, real API)
+    name: Lighthouse and accessibility checks (built site, real API)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -222,6 +222,13 @@ jobs:
       # (stable, and the ticket's bar); the Performance score is only reported, because it moves by
       # several points between runs on a shared runner (the time-to-text and layout-shift budgets
       # are asserted by the browser tests instead).
+      # The axe checks run here, beside Lighthouse, so the browser job stays under five minutes.
+      - name: Run the accessibility checks
+        working-directory: frontend
+        run: npm run e2e:a11y
+        env:
+          BASE_URL: http://localhost:8080
+          CHROME_PATH: /usr/bin/google-chrome
       - name: Run Lighthouse
         working-directory: frontend
         run: npm run lighthouse

@@ -13,7 +13,9 @@
     "e2e": "playwright test",
     "build:prerender": "vite build --ssr src/prerender/run.ts --outDir dist-prerender",
     "prerender": "node dist-prerender/run.js",
-    "lighthouse": "node scripts/lighthouse.mjs"
+    "lighthouse": "node scripts/lighthouse.mjs",
+    "e2e:core": "playwright test --grep-invert @a11y",
+    "e2e:a11y": "playwright test --grep @a11y"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

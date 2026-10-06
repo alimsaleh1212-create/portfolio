@@ -44,7 +44,7 @@ async function expectNoSeriousViolations(page: Page, label: string) {
   ).toEqual([]);
 }
 
-test.describe("the Climb, on each tier", () => {
+test.describe("the Climb, on each tier", { tag: "@a11y" }, () => {
   for (const tier of TIERS) {
     test(`${tier}: opening screen and every Stage`, async ({ page }) => {
       await openClimb(page, tier);
@@ -70,7 +70,7 @@ test.describe("the Climb, on each tier", () => {
   });
 });
 
-test.describe("the other pages", () => {
+test.describe("the other pages", { tag: "@a11y" }, () => {
   test("the Summary", async ({ page }) => {
     await page.goto("/summary");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
@@ -101,7 +101,7 @@ test.describe("the other pages", () => {
   });
 });
 
-test.describe("each state of the contact form", () => {
+test.describe("each state of the contact form", { tag: "@a11y" }, () => {
   const valid = {
     name: "Axe Test",
     email: "axe.test@example.com",
