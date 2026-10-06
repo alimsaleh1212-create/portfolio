@@ -18,6 +18,7 @@ import {
   trailTAt,
   type Pose,
 } from "./journey";
+import { HIKER_HEIGHT, type Hiker } from "./hiker";
 import { lightAt } from "./light";
 import { applyLightToAtmosphere } from "./materials";
 import type { SceneColors } from "./palette";
@@ -54,6 +55,8 @@ export class SceneController {
   private readout: HTMLElement | null = null;
   private stats = { frames: 0, last: 0, fps: 0, since: 0, ms: 0 };
   private listeners = new Set<() => void>();
+  private hiker: Hiker | null = null;
+  private hikerBusy = false;
 
   constructor(private readonly options: Options) {
     this.current = options.pinned ?? journeyAt(getClimb());
@@ -77,9 +80,27 @@ export class SceneController {
     if (this.options.pinned === null) this.target = journeyAt(getClimb());
   }
 
-  /** Whether a further frame is needed to finish easing. */
+  /** Whether a further frame is needed: the camera still easing, or the Hiker still moving. */
   get settling(): boolean {
-    return this.current !== this.target;
+    return this.current !== this.target || this.hikerBusy;
+  }
+
+  /** Put the Hiker in the scene (it arrives after the first draw). Returns the function that takes it out. */
+  attachHiker(hiker: Hiker, scene: Scene): () => void {
+    this.hiker = hiker;
+    this.hikerBusy = true;
+    const unmount = hiker.mount(scene);
+    return () => {
+      unmount();
+      if (this.hiker === hiker) this.hiker = null;
+      this.hikerBusy = false;
+      hiker.dispose();
+    };
+  }
+
+  /** The Hiker, once it has loaded (debug readout and tests). */
+  get walker(): Hiker | null {
+    return this.hiker;
   }
 
   setReadout(element: HTMLElement | null) {
@@ -96,6 +117,35 @@ export class SceneController {
           shift: { x: values[7] ?? 0, y: values[8] ?? 0 },
         }
       : null;
+  }
+
+  /** Debug: where the Hiker is on the screen and what it is doing, for measuring from the console. */
+  probe(camera: PerspectiveCamera, size: { width: number; height: number }) {
+    const hiker = this.hiker;
+    if (!hiker) return null;
+    const { world } = this.options;
+    const project = (v: Vector3) => {
+      const p = v.clone().project(camera);
+      return {
+        x: ((p.x + 1) / 2) * size.width,
+        y: ((1 - p.y) / 2) * size.height,
+      };
+    };
+    const feet = hiker.position.clone();
+    const head = feet.clone().setY(feet.y + HIKER_HEIGHT);
+    const foot = project(feet);
+    const top = project(head);
+    const lowest = hiker.lowestPoint();
+    return {
+      world: [feet.x, feet.y, feet.z],
+      screen: { x: foot.x, footY: foot.y, topY: top.y, height: foot.y - top.y },
+      facing: hiker.facing,
+      walking: hiker.walking,
+      cycles: hiker.walkCycles,
+      stride: hiker.stride,
+      gap: lowest - world.terrain.heightAt(feet.x, feet.z),
+      journey: this.current,
+    };
   }
 
   /** The scene's interface for later work, offered while the scene is mounted. */
@@ -212,6 +262,14 @@ export class SceneController {
     parts.hemisphere.groundColor.copy(light.groundAmbient);
     parts.hemisphere.intensity = light.ambientIntensity;
 
+    if (this.hiker) {
+      this.hikerBusy = this.hiker.update({
+        seconds,
+        camera,
+        stars: light.stars,
+      });
+    }
+
     if (!this.drawn) {
       this.drawn = true;
       // After this frame has been painted: the page can now show the scene.
@@ -244,6 +302,7 @@ export class SceneController {
         `geometries ${info.memory.geometries}  textures ${info.memory.textures}`,
         `frames drawn ${info.render.frame}`,
         `journey ${this.current.toFixed(3)}  pixel ratio ${gl.getPixelRatio().toFixed(2)}`,
+        `hiker ${this.hiker ? `${this.hiker.position.x.toFixed(1)} ${this.hiker.position.z.toFixed(1)} walk ${this.hiker.walking.toFixed(2)}` : "none"}`,
         `camera ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)} fov ${camera.fov.toFixed(0)}`,
       ].join("\n");
     }

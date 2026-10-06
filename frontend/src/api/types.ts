@@ -66,12 +66,12 @@ export interface Project {
   media?: ProjectMedia[];
 }
 
-export type MediaRole = "portrait" | "video_cv" | "cv_pdf";
+export type MediaRole = "portrait" | "video_cv" | "cv_pdf" | "hiker";
 
 /** One file of a media item; `url` is on our own origin under `/media/`. */
 export interface MediaVariant {
-  kind: "image" | "video" | "poster" | "document";
-  /** avif, webp, jpeg, h264 or pdf. */
+  kind: "image" | "video" | "poster" | "document" | "model";
+  /** avif, webp, jpeg, h264, pdf or glb. */
   format: string;
   content_type: string;
   url: string;
@@ -80,7 +80,7 @@ export interface MediaVariant {
   height: number | null;
 }
 
-/** The Portrait, the Video CV or the CV PDF. A role that was not seeded is absent. */
+/** The Portrait, the Video CV, the CV PDF or the Hiker's model. A role that was not seeded is absent. */
 export interface MediaItem {
   role: MediaRole;
   alt: string | null;

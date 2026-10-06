@@ -53,9 +53,9 @@ function box([cx, cy, cz], [w, h, d], uv) {
 // Atlas cells are 8 by 8; (column, row from the top) gives the centre of a flat-ish patch.
 const cell = (col, row) => [(col + 0.4) / 8, 1 - (row + 0.5) / 8];
 const parts = [
-  ["Rucksack", [0, -0.02, -0.62], [0.62, 0.74, 0.36], cell(6, 0)],
-  ["Rucksack_Lid", [0, 0.40, -0.62], [0.66, 0.16, 0.40], cell(1, 0)],
-  ["Bedroll", [0, 0.54, -0.62], [0.70, 0.18, 0.2], cell(5, 1)],
+  ["Rucksack", [0, -0.04, -0.5], [0.58, 0.66, 0.34], cell(6, 0)],
+  ["Rucksack_Lid", [0, 0.34, -0.5], [0.62, 0.14, 0.38], cell(1, 0)],
+  ["Bedroll", [0, 0.5, -0.5], [0.66, 0.18, 0.2], cell(5, 1)],
 ];
 for (const [name, c, s, uv] of parts) {
   chest.addChild(doc.createNode(name).setMesh(box(c, s, uv)));
