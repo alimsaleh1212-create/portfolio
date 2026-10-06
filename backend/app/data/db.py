@@ -9,6 +9,10 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase
 
+# The pool's limits are set, not defaulted, so metrics can report the ceiling.
+POOL_SIZE = 5
+MAX_OVERFLOW = 10
+
 
 class Base(DeclarativeBase):
     """Declarative base for every ORM model. Alembic reads its metadata."""
@@ -27,6 +31,8 @@ def create_engine(database_url: str, connect_timeout: float) -> AsyncEngine:
     return create_async_engine(
         database_url,
         pool_pre_ping=True,
+        pool_size=POOL_SIZE,
+        max_overflow=MAX_OVERFLOW,
         connect_args={"timeout": connect_timeout},
     )
 

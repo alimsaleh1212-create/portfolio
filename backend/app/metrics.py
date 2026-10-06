@@ -16,9 +16,14 @@ from prometheus_client import (
     CONTENT_TYPE_LATEST,
     CollectorRegistry,
     Counter,
+    Histogram,
     disable_created_metrics,
 )
+from prometheus_client.core import GaugeMetricFamily
 from prometheus_client.exposition import generate_latest
+from prometheus_client.registry import Collector
+from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.pool import QueuePool
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse, Response
 from starlette.types import Receive, Scope, Send
@@ -32,6 +37,75 @@ METRICS_PATH = "/metrics"
 # The cached endpoints, as metric labels. A fixed list, never a request value.
 CACHED_ENDPOINTS = ("profile", "stages", "projects", "project", "media")
 ERROR_OPERATIONS = ("read", "write", "skipped")
+# The methods the API can see. Anything else is one label value, so a client
+# cannot create series by inventing methods.
+KNOWN_METHODS = frozenset({"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"})
+LATENCY_BUCKETS = (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0)
+
+
+def clean_method(method: str) -> str:
+    """Return the method if it is a standard one, else "OTHER"."""
+    method = method.upper()
+    return method if method in KNOWN_METHODS else "OTHER"
+
+
+class HttpMetrics:
+    """Request count and duration by method, route template and status.
+
+    The route is the router's template (`/api/v1/projects/{slug}`), or
+    "unmatched". It is never the raw path, so no Visit ID or slug is a label.
+    """
+
+    def __init__(self, registry: CollectorRegistry) -> None:
+        """Register the request counter and the duration histogram."""
+        self._requests = Counter(
+            "portfolio_http_requests",
+            "Requests answered, by method, route template and status code.",
+            ["method", "route", "status"],
+            registry=registry,
+        )
+        self._duration = Histogram(
+            "portfolio_http_request_duration_seconds",
+            "Time to answer a request, by method, route template and status code.",
+            ["method", "route", "status"],
+            buckets=LATENCY_BUCKETS,
+            registry=registry,
+        )
+
+    def observe(self, method: str, route: str, status: int, seconds: float) -> None:
+        """Record one answered request."""
+        labels = (method, route, str(status))
+        self._requests.labels(*labels).inc()
+        self._duration.labels(*labels).observe(seconds)
+
+
+class PoolMetrics(Collector):
+    """The database connection pool's state, read when Prometheus scrapes."""
+
+    def __init__(self, engine: AsyncEngine, max_connections: int) -> None:
+        """Remember the engine and the most connections it may open."""
+        self._pool = engine.pool
+        self._max_connections = max_connections
+
+    def collect(self):  # noqa: ANN201
+        """Yield connections in use and idle, and the limit."""
+        pool = self._pool
+        if not isinstance(pool, QueuePool):
+            return
+        connections = GaugeMetricFamily(
+            "portfolio_db_pool_connections",
+            "Database connections held by the API's pool, by state.",
+            labels=["state"],
+        )
+        connections.add_metric(["in_use"], pool.checkedout())
+        connections.add_metric(["idle"], pool.checkedin())
+        yield connections
+        limit = GaugeMetricFamily(
+            "portfolio_db_pool_max_connections",
+            "The most database connections the pool may open.",
+        )
+        limit.add_metric([], self._max_connections)
+        yield limit
 
 
 class CacheMetrics:
