@@ -19,6 +19,7 @@ are created (so log lines still get a trace ID) and dropped when they end.
 """
 
 import contextlib
+import re
 import time
 from collections.abc import Iterator
 from typing import Any, cast
@@ -199,6 +200,23 @@ class TracedRedis(Redis):
 # --- requests ---------------------------------------------------------------
 
 
+def route_template(scope: Scope) -> str:
+    """Return the matched route's template with its router prefix, or "unmatched".
+
+    The router keeps routes relative to the router that holds them
+    (`/visits/{visit_id}/events`), so the prefix (`/api/v1`) is recovered from
+    the request path: whatever precedes the part the route's pattern matched.
+    A path parameter's value is inside that matched part and never appears.
+    """
+    route = scope.get("route")
+    template: str | None = getattr(route, "path_format", None)
+    if not template:
+        return UNMATCHED_ROUTE
+    pattern = getattr(getattr(route, "path_regex", None), "pattern", "")
+    match = re.search(pattern.removeprefix("^"), scope["path"])
+    return scope["path"][: match.start()] + template if match else template
+
+
 class TelemetryMiddleware:
     """Time each request, count it, and give it a span.
 
@@ -244,7 +262,7 @@ class TelemetryMiddleware:
             raise
         finally:
             elapsed = time.perf_counter() - started
-            route = getattr(scope.get("route"), "path", None) or UNMATCHED_ROUTE
+            route = route_template(scope)
             self._metrics.observe(method, route, status, elapsed)
             if span is not None and token is not None:
                 span.update_name(f"{method} {route}")

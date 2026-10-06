@@ -141,9 +141,8 @@ def test_requests_are_spans_named_by_route_template(
 
     server = [s for s in exporter.get_finished_spans() if s.parent is None]
     names = {s.name for s in server}
-    assert "POST /api/v1/visits/{visit_id}/events" in names or any(
-        n.startswith("POST /api/v1/visits/") and "{" in n for n in names
-    )
+    assert "POST /api/v1/visits/{visit_id}/events" in names
+    assert "POST /api/v1/contact" in names
     assert "GET unmatched" in names
     assert str(visit) not in spans_text(exporter)
 
