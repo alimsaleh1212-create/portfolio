@@ -17,3 +17,6 @@ window.matchMedia ??= (query: string) =>
     addEventListener: () => {},
     removeEventListener: () => {},
   }) as unknown as MediaQueryList;
+
+// Nor does it scroll an element into view.
+Element.prototype.scrollIntoView ??= () => {};

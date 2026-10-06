@@ -1,6 +1,6 @@
 import { QueryClient, queryOptions } from "@tanstack/react-query";
 
-import type { MediaItem, Profile, Project } from "./types";
+import type { MediaItem, Profile, Project, Stage } from "./types";
 
 const API_ROOT = "/api/v1";
 
@@ -49,6 +49,11 @@ export const profileQuery = queryOptions({
 export const projectsQuery = queryOptions({
   queryKey: ["projects"],
   queryFn: () => getJson<Project[]>("/projects"),
+});
+
+export const stagesQuery = queryOptions({
+  queryKey: ["stages"],
+  queryFn: () => getJson<Stage[]>("/stages"),
 });
 
 /** Media is a decoration: when it cannot be had the page is shown without it, so no retry. */

@@ -34,6 +34,44 @@
   --color-line-strong: #3d4770;
   --color-dusk: #8f4f7a;
 
+  /*
+   * Colour: the Climb's light (ADR 0001). A dawn sky keeps its depth overhead and gathers
+   * its warmth at the horizon, so the light is two sets of tokens.
+   * light-*: the sky overhead at the top of each Stage, dark enough for text to sit on
+   *   anywhere: night blue at the Trailhead, through indigo and violet, to plum and
+   *   rose-plum at High Camp. A Stage's sky runs from its own colour to the next one's.
+   *   light-ground is the dark slope under the Summit. These are the colours the 3D
+   *   scene's sky and fog will take (ticket #15).
+   * ember-*: the horizon's warmth at each Stage, from blue to amber. Brighter than text
+   *   can sit on, so it is used only in glows on the side of a Stage with no text.
+   * first-light: the Summit catching the sun.
+   * Every text colour is checked on every light-* colour and on every stop of every
+   * sky gradient (contrast.test.ts).
+   */
+  --color-light-trailhead: #0a0d18;
+  --color-light-long-approach: #0f1630;
+  --color-light-steep-switch: #1b1d46;
+  --color-light-ridge: #2d2152;
+  --color-light-high-camp: #43254f;
+  --color-light-summit: #5a2848;
+  --color-light-ground: #1c1424;
+  --color-ember-trailhead: #1a2a66;
+  --color-ember-long-approach: #2f3a86;
+  --color-ember-steep-switch: #6a4396;
+  --color-ember-ridge: #b0507e;
+  --color-ember-high-camp: #e8745c;
+  --color-first-light: #ffc48a;
+
+  /*
+   * Form fields. Navy on the night ground (the Summary); the Climb's last section
+   * re-points them to its own ground (see the sky-fields utility), so the contact
+   * component never needs to know where it is.
+   */
+  --color-field: #121830;
+  --color-field-edge: #3d4770;
+  --color-light-field: #2b1c35;
+  --color-light-field-edge: #8a76a0;
+
   /* Colour: text and accent */
   --color-ink: #efe9e4;
   --color-ink-muted: #a6abc6;
@@ -56,6 +94,8 @@
   --text-xl--line-height: 1.3;
   --text-2xl: 1.875rem;
   --text-2xl--line-height: 1.2;
+  --text-title: clamp(2rem, 1.4rem + 2.4vw, 3rem);
+  --text-title--line-height: 1.05;
   --text-display: clamp(2.5rem, 1.6rem + 3.6vw, 4rem);
   --text-display--line-height: 1.02;
   --font-weight-normal: 400;
@@ -70,6 +110,7 @@
   --spacing: 0.25rem;
   --spacing-gutter: 1.25rem;
   --spacing-gutter-wide: 2.5rem;
+  --spacing-meter: 5rem;
   --spacing-section: 4rem;
   --spacing-section-wide: 6rem;
   --container-page: 76rem;
@@ -96,6 +137,88 @@
     ellipse 70% 100% at 50% 0%,
     var(--color-glow),
     transparent
+  );
+
+  /* The Climb's sky as backgrounds: one per Stage, then the Summit's. */
+  --background-image-stage-trailhead: linear-gradient(
+    to bottom,
+    var(--color-light-trailhead),
+    var(--color-light-long-approach)
+  );
+  --background-image-stage-long-approach: linear-gradient(
+    to bottom,
+    var(--color-light-long-approach),
+    var(--color-light-steep-switch)
+  );
+  --background-image-stage-steep-switch: linear-gradient(
+    to bottom,
+    var(--color-light-steep-switch),
+    var(--color-light-ridge)
+  );
+  --background-image-stage-ridge: linear-gradient(
+    to bottom,
+    var(--color-light-ridge),
+    var(--color-light-high-camp)
+  );
+  --background-image-stage-high-camp: linear-gradient(
+    to bottom,
+    var(--color-light-high-camp),
+    var(--color-light-summit)
+  );
+  --background-image-summit-sky: linear-gradient(
+    to bottom,
+    var(--color-light-summit),
+    var(--color-light-summit) 45%,
+    var(--color-light-ground)
+  );
+  /*
+   * The horizon's warmth, one glow per Stage on the side without text. Each fades out
+   * before the section's top and bottom edges, so one Stage's sky joins the next's.
+   * Nothing readable sits on these.
+   */
+  --background-image-horizon-trailhead: radial-gradient(
+    ellipse 40% 30% at 80% 62%,
+    var(--color-ember-trailhead),
+    transparent
+  );
+  --background-image-horizon-long-approach: radial-gradient(
+    ellipse 40% 30% at 20% 62%,
+    var(--color-ember-long-approach),
+    transparent
+  );
+  --background-image-horizon-steep-switch: radial-gradient(
+    ellipse 42% 32% at 80% 64%,
+    var(--color-ember-steep-switch),
+    transparent
+  );
+  --background-image-horizon-ridge: radial-gradient(
+    ellipse 40% 30% at 18% 70%,
+    var(--color-ember-ridge),
+    transparent
+  );
+  --background-image-horizon-high-camp: radial-gradient(
+    ellipse 44% 34% at 20% 66%,
+    var(--color-ember-high-camp),
+    transparent
+  );
+  /* First light on the Summit's face, the sun's glow behind it, and the slope under it. */
+  --background-image-summit-face: linear-gradient(
+    115deg,
+    var(--color-first-light),
+    var(--color-accent) 35%,
+    var(--color-dusk) 70%,
+    var(--color-light-ridge)
+  );
+  --background-image-summit-glow: radial-gradient(
+    ellipse 50% 45% at 50% 58%,
+    var(--color-first-light),
+    var(--color-ember-high-camp) 45%,
+    transparent
+  );
+  --background-image-peak-foot: linear-gradient(
+    to top,
+    var(--color-light-ground),
+    transparent 55%
   );
 
   /* Motion */
@@ -127,6 +250,26 @@
     50% {
       opacity: 0.45;
     }
+  }
+}
+
+/*
+ * Scroll reveal: a block eases in as it enters the screen, tied to the scroll position
+ * rather than to time, so it never makes the Visitor wait. Where scroll-driven
+ * animation is unsupported the block is simply there. Never put it on something
+ * taller than the screen: its entry would not finish.
+ */
+@utility reveal {
+  @supports (animation-timeline: view()) {
+    animation: reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 45%;
+  }
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise-distance));
   }
 }
 
@@ -181,6 +324,12 @@
   main:focus {
     outline: none;
   }
+  /* The altitude meter's bar sits over the bottom of narrow screens: keep focus clear of it. */
+  @variant max-lg {
+    :root:has(nav[aria-label="Altitude meter"]) {
+      scroll-padding-bottom: var(--spacing-meter);
+    }
+  }
 }
 
 /* Links: accent, underlined, brighter on hover. Hover only where hover exists. */
@@ -217,7 +366,49 @@
  * here (the one literal allowed outside @theme): the identity column sticks only
  * when the viewport is at least this tall.
  */
+@custom-variant hover-fine (@media (hover: hover) and (pointer: fine));
 @custom-variant tall (@media (min-height: 50rem));
+
+/* The Climb's last section: form fields take the sky's own ground. */
+@utility sky-fields {
+  --color-field: var(--color-light-field);
+  --color-field-edge: var(--color-light-field-edge);
+}
+
+/* Facets of the Summit's peak and the ridgelines: flat polygons, drawn in CSS. */
+@utility peak {
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+@utility peak-shade {
+  clip-path: polygon(50% 0%, 100% 100%, 62% 100%, 44% 46%);
+}
+@utility ridgeline-far {
+  clip-path: polygon(
+    0% 70%,
+    14% 38%,
+    27% 62%,
+    43% 22%,
+    58% 58%,
+    72% 34%,
+    88% 64%,
+    100% 44%,
+    100% 100%,
+    0% 100%
+  );
+}
+@utility ridgeline-near {
+  clip-path: polygon(
+    0% 82%,
+    18% 56%,
+    34% 76%,
+    52% 46%,
+    68% 74%,
+    84% 52%,
+    100% 78%,
+    100% 100%,
+    0% 100%
+  );
+}
 
 /* Pressable things dip slightly under the finger. */
 @utility press {

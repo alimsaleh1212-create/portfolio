@@ -18,7 +18,7 @@ const EMPTY: ContactValues = { name: "", email: "", message: "" };
 const FIELD_ORDER: ContactField[] = ["name", "email", "message"];
 
 const inputClass =
-  "bg-raised border-line-strong text-ink placeholder:text-ink-muted w-full rounded-control border px-4 py-3 transition-colors aria-[invalid=true]:border-alert";
+  "bg-field border-field-edge text-ink placeholder:text-ink-muted w-full rounded-control border px-4 py-3 transition-colors aria-[invalid=true]:border-alert";
 const labelClass = "text-ink block text-sm font-medium";
 
 /**
@@ -127,7 +127,7 @@ export function ContactSection({
       >
         {sending && <span className="sr-only">Sending your message.</span>}
         {status === "sent" && (
-          <div className="bg-raised border-line mt-6 max-w-measure animate-rise rounded-surface border p-6">
+          <div className="bg-field border-field-edge mt-6 max-w-measure animate-rise rounded-surface border p-6">
             <p className="text-lg font-semibold">Message sent</p>
             <p className="text-ink-muted mt-2">
               Thank you for writing. I will reply by email.

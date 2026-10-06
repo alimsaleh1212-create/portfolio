@@ -88,3 +88,17 @@ export interface MediaItem {
   duration_seconds: number | null;
   variants: MediaVariant[];
 }
+
+export type StageKey =
+  "trailhead" | "long-approach" | "steep-switch" | "ridge" | "high-camp";
+
+/** One Stage of the Climb. A placeholder Challenge has not been written by Ali yet. */
+export interface Stage {
+  key: StageKey;
+  name: string;
+  /** The Ridge has none. */
+  period: string | null;
+  body: string;
+  challenge: string;
+  challenge_is_placeholder: boolean;
+}

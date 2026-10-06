@@ -4,6 +4,7 @@ import type {
   Profile,
   Project,
   ProjectMedia,
+  Stage,
 } from "../api/types";
 
 export const profile: Profile = {
@@ -217,4 +218,39 @@ export const projectMedia: ProjectMedia[] = [
       ),
     ),
   },
+];
+
+const stage = (
+  key: Stage["key"],
+  name: string,
+  period: string | null,
+  body: string,
+  placeholder = true,
+): Stage => ({
+  key,
+  name,
+  period,
+  body,
+  challenge: placeholder
+    ? `Ali will write the ${name} Challenge in his own words.`
+    : `The ${name} Challenge, written.`,
+  challenge_is_placeholder: placeholder,
+});
+
+export const stages: Stage[] = [
+  stage("trailhead", "Trailhead", "2016 – 2018", "I earned two degrees."),
+  stage("long-approach", "Long Approach", "2019 – 2025", "I built backends."),
+  stage("steep-switch", "Steep Switch", "2026", "I did the bootcamp.", false),
+  stage(
+    "ridge",
+    "Ridge",
+    null,
+    "I built six AI automation and agent projects.",
+  ),
+  stage(
+    "high-camp",
+    "High Camp",
+    "Jun 2026 – Present",
+    "I lead two engineers.",
+  ),
 ];

@@ -99,7 +99,19 @@ export function recordEvent(event: VisitEvent): void {
   }
 }
 
+// Stages already reported on this Visit. The Visit outlives any one page, so the
+// record of what has been sent lives here and not in a component.
+const stagesReported = new Set<string>();
+
+/** Record "Stage reached" for a Stage, once per Visit however often it is called. */
+export function recordStageReached(stage: string): void {
+  if (stagesReported.has(stage)) return;
+  stagesReported.add(stage);
+  recordEvent({ type: "stage_reached", stage });
+}
+
 /** Forget the Visit. For tests only. */
 export function resetVisitForTests(): void {
   state = { status: "idle" };
+  stagesReported.clear();
 }

@@ -4,7 +4,7 @@ import { vi } from "vitest";
 
 import { App } from "../App";
 import { createQueryClient } from "../api/client";
-import { media, profile, projects } from "./fixtures";
+import { media, profile, projects, stages } from "./fixtures";
 
 /** Stub `fetch` so each API path answers with the given handler's response. */
 export function stubApi(
@@ -23,6 +23,7 @@ export const json = (body: unknown, status = 200) =>
 export function answerWithContent(path: string, available = media): Response {
   if (path.endsWith("/profile")) return json(profile);
   if (path.endsWith("/projects")) return json(projects);
+  if (path.endsWith("/stages")) return json(stages);
   if (path.endsWith("/media")) return json(available);
   return json({ detail: "not found" }, 404);
 }
