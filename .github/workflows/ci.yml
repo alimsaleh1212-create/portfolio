@@ -117,8 +117,15 @@ jobs:
       # The production images: the built frontend baked into Caddy, the API, and the seed, which
       # stores the Hiker's model and the still pictures (both tracked in content/) in MinIO.
       - uses: docker/setup-buildx-action@v3
+      # This builds and runs the one-shot `prerender` job, which Caddy waits for: a pre-render
+      # that cannot draw a page fails the stack here, and so the workflow.
       - name: Build and start the stack
         run: docker compose up -d --build --wait
+      - name: Check what the pre-render wrote
+        run: |
+          docker compose logs prerender
+          test "$(curl -s localhost:8080/sitemap.xml | grep -c '<loc>')" -ge 8
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/nowhere)" = 404
       - uses: actions/setup-node@v4
         with:
           node-version: 22
