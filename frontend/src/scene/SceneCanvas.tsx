@@ -1,13 +1,19 @@
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { Canvas, useFrame, useStore, useThree } from "@react-three/fiber";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PerspectiveCamera } from "three";
 
+import { mediaQuery } from "../api/client";
 import { subscribeClimb } from "../climb/climb";
 import { SceneController } from "./controller";
 import { DebugReadout } from "./DebugReadout";
+import { Hiker } from "./hiker";
+import { contentOver } from "./occlusion";
+import { hikerModelUrl, loadHikerModel } from "./hikerModel";
 import { createParts } from "./parts";
 import { readSceneColors } from "./palette";
 import { watchVisibility } from "./visibility";
+import { getClimbScene } from "./registry";
 import { createWorld } from "./world";
 
 const MAX_PIXEL_RATIO = 1.5;
@@ -31,6 +37,18 @@ export default function SceneCanvas({
   pinned = null,
 }: Props) {
   const readout = useRef<HTMLPreElement>(null);
+  const queryClient = useQueryClient();
+  // Where the Hiker's model is. Asked for only once the scene has been drawn.
+  const findModel = useMemo(
+    () => async () => {
+      try {
+        return hikerModelUrl(await queryClient.fetchQuery(mediaQuery));
+      } catch {
+        return null;
+      }
+    },
+    [queryClient],
+  );
   return (
     <>
       <Canvas
@@ -54,6 +72,7 @@ export default function SceneCanvas({
           pinned={pinned}
           onDrawn={onDrawn}
           readout={readout}
+          findModel={findModel}
         />
       </Canvas>
       {debug && <DebugReadout ref={readout} />}
@@ -67,13 +86,17 @@ function Mountain({
   pinned,
   onDrawn,
   readout,
+  findModel,
 }: {
   debug: boolean;
   pinned: number | null;
   onDrawn: () => void;
   readout: React.RefObject<HTMLPreElement | null>;
+  findModel: () => Promise<string | null>;
 }) {
   const { scene, size, gl, invalidate, setFrameloop } = useThree();
+  const store = useStore();
+  const [drawn, setDrawn] = useState(false);
   const built = useMemo(() => {
     const colors = readSceneColors();
     const world = createWorld();
@@ -82,14 +105,17 @@ function Mountain({
       world,
       colors,
       parts,
-      onDrawn,
+      onDrawn: () => {
+        onDrawn();
+        setDrawn(true);
+      },
       pinned,
     });
-    return { controller };
+    return { controller, colors };
     // The scene is built once for this canvas; its props are fixed for its life.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const { controller } = built;
+  const { controller, colors } = built;
 
   // Put the objects in the scene, and take them out and free them when the page is left.
   useEffect(() => controller.mount(scene), [scene, controller]);
@@ -117,10 +143,44 @@ function Mountain({
   // Offer the scene's interface to the rest of the app while it is mounted.
   useEffect(() => controller.publish(), [controller]);
 
+  // The Hiker comes after the scene has been drawn, never before, and its failure costs nothing.
+  useEffect(() => {
+    if (!drawn) return;
+    const abort = new AbortController();
+    let detach: (() => void) | null = null;
+    void (async () => {
+      try {
+        const url = await findModel();
+        if (!url || abort.signal.aborted) return;
+        const { model, clips } = await loadHikerModel(url, abort.signal);
+        const climb = getClimbScene();
+        if (!climb || abort.signal.aborted) return;
+        detach = controller.attachHiker(
+          new Hiker({ scene: climb, model, clips, colors }),
+          scene,
+        );
+        invalidate();
+      } catch {
+        // No Hiker: the mountain carries on.
+      }
+    })();
+    return () => {
+      abort.abort();
+      detach?.();
+    };
+  }, [drawn, findModel, controller, colors, scene, invalidate]);
+
   useEffect(() => {
     controller.setPixelRatio(gl.getPixelRatio());
     invalidate();
   }, [controller, gl, size, invalidate]);
+
+  // Page content over the Hiker makes it step aside. The scene itself never reads the page: this
+  // is the one place that asks what is on screen at a point.
+  useEffect(() => {
+    controller.setOccluder(contentOver);
+    return () => controller.setOccluder(null);
+  }, [controller]);
 
   // Debug only: the readout, and a hook to try a camera pose without a reload.
   useEffect(() => {
@@ -128,6 +188,16 @@ function Mountain({
     controller.setReadout(readout.current);
     const hook = window as unknown as {
       setScenePose?: (values: number[] | null) => void;
+      probeHiker?: () => unknown;
+    };
+    hook.probeHiker = () => {
+      const { camera, size } = store.getState();
+      const info = gl.info.render;
+      return {
+        hiker: controller.probe(camera as PerspectiveCamera, size),
+        frames: info.frame,
+        calls: info.calls,
+      };
     };
     hook.setScenePose = (values) => {
       controller.setManualPose(values);
@@ -136,8 +206,9 @@ function Mountain({
     return () => {
       controller.setReadout(null);
       delete hook.setScenePose;
+      delete hook.probeHiker;
     };
-  }, [debug, controller, readout, invalidate]);
+  }, [debug, controller, readout, invalidate, store, gl]);
 
   useFrame((state, delta) => {
     controller.frame(

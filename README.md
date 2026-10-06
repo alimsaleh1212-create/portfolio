@@ -84,6 +84,14 @@ The Portrait, the Video CV and the CV PDF are not in git (the repo is public and
 - **Missing files**: a role whose file is not in the folder is skipped with a warning, and the Summary leaves it out. `python -m app.seed --strict` fails and names every missing file.
 - **Serving**: objects live in the MinIO bucket under content-hashed keys. Anonymous visitors may read objects and nothing else (no listing, no writes). Caddy serves them at `/media/<key>` with `Cache-Control: public, max-age=31536000, immutable`, passes range requests through, allows only GET, HEAD and OPTIONS, and strips MinIO's own headers. MinIO is not published on the host.
 
+### The Hiker's model (tracked)
+
+The one media item that is in git is the Hiker's 3D model, `content/hiker/hiker.glb`, because its licence allows it. `content/media.yaml` names it under `hiker` as a path inside `content/`; the seed stores it in MinIO like the others (`hiker-<hash>.glb`, listed by `/api/v1/media`), so a fresh clone and CI have it with an empty media folder.
+
+## Credits
+
+The Hiker is "Rogue (Hooded)" from the KayKit *Adventurers Character Pack* by [Kay Lousberg](https://www.kaylousberg.com), licensed CC0 (public domain), modified (weapons, cape and most animations removed; a rucksack added). Source, licence text, changes and file hashes: [`content/hiker/CREDITS.md`](content/hiker/CREDITS.md).
+
 ## Observability (optional)
 
 An optional Compose profile adds Prometheus (metrics), Loki (logs), Tempo (traces), Alloy (the one collector) and Grafana. With the profile off the site runs exactly as before: no extra container and nothing tries to export anything. This is also where Ali reads his Visits, their Progress and his contact messages, since the site has no admin panel.

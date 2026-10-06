@@ -14,7 +14,7 @@ class MediaVariant(BaseModel):
 
     kind: VariantKind
     format: str
-    """avif, webp, jpeg, h264 or pdf."""
+    """avif, webp, jpeg, h264, pdf or glb."""
     content_type: str
     url: str
     size_bytes: int
@@ -23,7 +23,7 @@ class MediaVariant(BaseModel):
 
 
 class MediaItem(BaseModel):
-    """One media item: the Portrait, the Video CV or the CV PDF."""
+    """One media item: the Portrait, the Video CV, the CV PDF or the Hiker's model."""
 
     role: MediaRole
     alt: str | None

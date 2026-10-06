@@ -18,6 +18,7 @@ from app.data.storage import MediaStore, create_s3_client
 from app.media import prepare, video
 from app.media.manifest import (
     DocumentEntry,
+    HikerEntry,
     MediaManifest,
     PortraitEntry,
     VideoEntry,
@@ -49,6 +50,8 @@ class Env:
         self.settings = settings
         self.database_url = database_url
         self.source = source
+        self.content = source.parent / "content"
+        self.content.mkdir(exist_ok=True)
         self.bucket = f"{settings.minio_bucket}-test-{uuid.uuid4().hex[:10]}"
         self.client = create_s3_client(
             settings.minio_endpoint,
@@ -68,6 +71,7 @@ class Env:
                     self.store,
                     MediaRepository(create_session_factory(engine)),
                     self.source,
+                    self.content,
                 )
                 return await pipeline.sync(manifest, strict=strict)
             finally:
@@ -350,4 +354,57 @@ def test_a_manifest_naming_a_folder_is_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ContentError, match="plain file name"):
+        load_manifest(tmp_path)
+
+
+def test_the_hiker_model_is_read_from_the_content_folder(env: Env) -> None:
+    (env.content / "hiker").mkdir()
+    (env.content / "hiker" / "model.glb").write_bytes(b"glTF" + bytes(60))
+    manifest = MANIFEST.model_copy(update={"hiker": HikerEntry(file="hiker/model.glb")})
+
+    report = env.sync(manifest)
+
+    assert "hiker" in report.processed
+    (variant,) = env.rows()["hiker"]["variants"]
+    assert variant["kind"] == "model"
+    assert variant["content_type"] == "model/gltf-binary"
+    assert variant["key"].startswith("hiker-") and variant["key"].endswith(".glb")
+    assert variant["size_bytes"] == 64
+    assert anonymous(env.url(variant["key"])) == 200
+    assert "hiker" in env.sync(manifest).unchanged
+
+
+def test_a_hiker_file_that_is_not_a_glb_is_refused(env: Env) -> None:
+    (env.content / "model.glb").write_bytes(b"not a model at all")
+    manifest = MANIFEST.model_copy(update={"hiker": HikerEntry(file="model.glb")})
+
+    with pytest.raises(prepare.ModelError):
+        env.sync(manifest)
+
+
+def test_a_missing_hiker_file_is_an_error_not_a_skip(env: Env) -> None:
+    manifest = MANIFEST.model_copy(update={"hiker": HikerEntry(file="gone.glb")})
+
+    with pytest.raises(ContentError, match="gone.glb"):
+        env.sync(manifest)
+
+
+def test_the_real_manifest_names_a_hiker_that_is_a_glb(settings: Settings) -> None:
+    manifest = load_manifest(settings.content_dir)
+
+    assert manifest.hiker is not None
+    model = Path(settings.content_dir) / manifest.hiker.file
+    assert model.read_bytes()[:4] == b"glTF"
+    assert model.stat().st_size < 500_000
+
+
+def test_a_hiker_path_outside_the_content_folder_is_rejected(tmp_path: Path) -> None:
+    (tmp_path / "media.yaml").write_text(
+        "portrait: {file: p.jpg, alt: a}\n"
+        "video_cv: {file: v.mov, alt: a}\n"
+        "cv_pdf: {file: c.pdf, download_name: c.pdf}\n"
+        "hiker: {file: ../x.glb}\n"
+    )
+
+    with pytest.raises(ContentError, match="inside the content folder"):
         load_manifest(tmp_path)
