@@ -47,6 +47,17 @@ async function climbText(page: Page) {
   }, STAGES);
 }
 
+// The API accepts only so many Visits a minute from one client (`VISIT_START_LIMIT_PER_MINUTE`,
+// 20), and this suite loads far more pages than that over a run, and more again when runs follow
+// one another. Only the Visit tests are about the Visit; everywhere else its request is answered
+// as a known bot's is (204, nothing recorded), so they never use up the allowance.
+test.beforeEach(async ({ page }) => {
+  if (test.info().titlePath.includes("the Visit")) return;
+  await page.route("**/api/v1/visits**", (route) =>
+    route.fulfill({ status: 204 }),
+  );
+});
+
 test.describe("forcing a tier", () => {
   const texts: Record<string, string[]> = {};
   for (const tier of TIERS) {
