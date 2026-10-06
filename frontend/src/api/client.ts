@@ -4,6 +4,15 @@ import type { MediaItem, Profile, Project, Stage } from "./types";
 
 const API_ROOT = "/api/v1";
 
+// In the browser the API is on the page's own origin. The pre-render runs in Node, where a
+// relative address means nothing, so it sets the API's address once before it fetches.
+let apiOrigin = "";
+
+/** Fetch from this origin instead of the page's own. Only the pre-render calls this. */
+export function setApiOrigin(origin: string): void {
+  apiOrigin = origin.replace(/\/+$/, "");
+}
+
 /** The API answered with an error status, or its answer was not usable. */
 export class ApiError extends Error {
   readonly status: number | null;
@@ -19,7 +28,7 @@ export class ApiError extends Error {
 export async function getJson<T>(path: string): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(`${API_ROOT}${path}`, {
+    response = await fetch(`${apiOrigin}${API_ROOT}${path}`, {
       headers: { Accept: "application/json" },
     });
   } catch {

@@ -16,6 +16,16 @@ const STAGES = [
 ] as const;
 const TIERS = ["full", "light", "still"] as const;
 
+/** Two animation frames: whatever was scheduled before has been drawn. */
+async function nextFrames(page: Page) {
+  await page.evaluate(
+    () =>
+      new Promise<void>((done) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => done())),
+      ),
+  );
+}
+
 /** Open the Climb and wait until the tier's picture is on: the scene drawn, or the backdrop. */
 async function openClimb(page: Page, query = "") {
   await page.goto(`/${query}`);
@@ -36,6 +46,17 @@ async function climbText(page: Page) {
     );
   }, STAGES);
 }
+
+// The API accepts only so many Visits a minute from one client (`VISIT_START_LIMIT_PER_MINUTE`,
+// 20), and this suite loads far more pages than that over a run, and more again when runs follow
+// one another. Only the Visit tests are about the Visit; everywhere else its request is answered
+// as a known bot's is (204, nothing recorded), so they never use up the allowance.
+test.beforeEach(async ({ page }) => {
+  if (test.info().titlePath.includes("the Visit")) return;
+  await page.route("**/api/v1/visits**", (route) =>
+    route.fulfill({ status: 204 }),
+  );
+});
 
 test.describe("forcing a tier", () => {
   const texts: Record<string, string[]> = {};
@@ -89,7 +110,20 @@ test.describe("the still tier", () => {
     );
     for (const y of positions) {
       await page.evaluate((to) => window.scrollTo(0, to), y);
-      await page.waitForTimeout(150);
+      // The scroll has landed and a frame has been drawn at the new place.
+      await page.waitForFunction(
+        (to) =>
+          // The bottom of the page cannot be scrolled to its own height, only to its last screen.
+          Math.abs(
+            window.scrollY -
+              Math.min(
+                to,
+                document.documentElement.scrollHeight - window.innerHeight,
+              ),
+          ) < 2,
+        y,
+      );
+      await nextFrames(page);
       const running = await page.evaluate(() =>
         document
           .getAnimations()
@@ -169,7 +203,20 @@ test.describe("the still tier", () => {
     await expect
       .poll(() => requested.filter((url) => /\/media\/still-/.test(url)).length)
       .toBeGreaterThan(1);
-    await page.waitForLoadState("networkidle");
+    // Every picture the backdrop asked for has arrived, and the browser has had an idle moment
+    // (the moment the scene would have been fetched in) since: what was requested is final.
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll("[data-testid=still-backdrop] img")].every(
+        (img) => (img as HTMLImageElement).complete,
+      ),
+    );
+    await page.evaluate(
+      () =>
+        new Promise<void>((done) =>
+          requestIdleCallback(() => done(), { timeout: 3000 }),
+        ),
+    );
+    await nextFrames(page);
     expect(
       requested.filter((url) => /SceneCanvas|GLTFLoader/.test(url)),
     ).toEqual([]);
@@ -285,12 +332,14 @@ test.describe("while running", () => {
       sim(90, 200);
       sim(8, 500);
     });
-    await page.waitForTimeout(500);
-    expect(
-      await page.evaluate(
+    const tiers = () =>
+      page.evaluate(
         () => (window as unknown as Record<string, unknown>).__tiers,
-      ),
-    ).toEqual(["full", "light"]);
+      );
+    await expect.poll(tiers).toEqual(["full", "light"]);
+    // The fast frames that followed have been drawn too, and nothing went back up.
+    await nextFrames(page);
+    expect(await tiers()).toEqual(["full", "light"]);
   });
 
   test("losing the graphics context ends in the still tier", async ({

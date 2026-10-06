@@ -14,7 +14,7 @@ describe("routing and shell", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Ali Saleh" }),
     ).toBeInTheDocument();
-    expect(document.title).toBe("Climb | Ali Saleh");
+    expect(document.title).toBe("Ali Saleh | AI Development Specialist");
   });
 
   it("links the header to the Climb and the Summary, and the wordmark to /", () => {

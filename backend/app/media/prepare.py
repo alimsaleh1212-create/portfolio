@@ -83,6 +83,7 @@ def settings_fingerprint(role: MediaRole, extra: str = "") -> str:
     elif role == "stills":
         settings = {
             "widths": images.STILL_WIDTHS,
+            "preview": images.PREVIEW_SIZE,
             "quality": [images.AVIF_QUALITY, images.WEBP_QUALITY, images.JPEG_QUALITY],
         }
     else:
@@ -267,6 +268,8 @@ def stills_fingerprint(path: Path) -> str:
 def prepare_stills(source: Path, folder: Path) -> Prepared:
     """Render every still at its composition's widths in AVIF, WebP and JPEG.
 
+    Each wide still also gets a 1200x630 JPEG, `<position>-preview`, for link previews.
+
     Args:
         source: Folder of `<position>-<wide|narrow>.png` files.
         folder: Scratch folder for the output.
@@ -283,7 +286,28 @@ def prepare_stills(source: Path, folder: Path) -> Prepared:
                 name,
             )
         )
+        if composition == "wide":
+            files.append(_preview_file(folder, path, name.removesuffix("-wide")))
     return Prepared(files=files)
+
+
+def _preview_file(folder: Path, source: Path, position: str) -> PreparedFile:
+    """The wide still cropped to a link-preview picture, named `<position>-preview`."""
+    rendered = images.render_preview(source)
+    path, digest = _store_bytes(folder, rendered.data, ".jpg")
+    return PreparedFile(
+        path=path,
+        variant=Variant(
+            kind="still",
+            format=rendered.format,
+            content_type=rendered.content_type,
+            key=f"still-{position}-preview-w{rendered.width}-{digest}.jpg",
+            size_bytes=len(rendered.data),
+            width=rendered.width,
+            height=rendered.height,
+            name=f"{position}-preview",
+        ),
+    )
 
 
 GLB_MAGIC = b"glTF"

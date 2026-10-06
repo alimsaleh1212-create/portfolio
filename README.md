@@ -34,7 +34,23 @@ Open <http://localhost:8080> (change the port with `CADDY_PORT` in `.env`). Cadd
 
 The five read endpoints are cached in Redis and carry a strong `ETag` with `Cache-Control: no-cache`, so a browser asks again and gets `304` when it already has the latest copy. Content only changes when the seed runs, and the seed invalidates the cache itself as its last step, so the next request after a seed returns the new content. If Redis is down the endpoints answer from Postgres and log one warning. Visits, contact and health are sent `Cache-Control: no-store`.
 
-Caddy serves the hashed files in `/assets/` with a one-year `immutable` header, serves the HTML document and favicon so browsers revalidate them, and compresses text and JSON.
+Caddy serves the hashed files in `/assets/` with a one-year `immutable` header, serves the pre-rendered HTML and the favicon so browsers revalidate them (`Cache-Control: no-cache`, answered `304` from the file's `ETag`), and compresses text and JSON.
+
+## Pre-rendering
+
+The pages are drawn to HTML ahead of time so a crawler that does not run JavaScript, and a chat or social app building a link preview, see the real content: the landing page, the Summary and one page per Project (eight today; more if Projects are added). A one-shot `prerender` service runs the real React app on the server side, reads the same API endpoints the pages use (so the text comes from the seed, never from the frontend's source), and writes the HTML, `sitemap.xml` and `robots.txt` to a volume that Caddy serves. The browser then takes the page over (hydration) with the same data, so nothing is fetched twice and nothing flashes or jumps. The tier decision, the 3D scene, the still backdrop and the Visit still start in the browser only.
+
+- **It runs at every start**, after the seed and before Caddy, so a normal `docker compose up` always serves pages that match the content.
+- **After a manual seed, re-run it** (no image is rebuilt; about a second):
+
+  ```bash
+  docker compose run --rm --no-deps prerender
+  ```
+
+  `--no-deps` matters: without it Compose may start the seed again first. Dev mode does not pre-render: the Vite dev server draws the pages in the browser, with hot reload, and Caddy does not wait for the job.
+- **Each page** has its own title, description (built from the profile's headline and summary, or a Project's tagline and description, at most 160 characters and never cut in the middle of a word), canonical address, Open Graph and Twitter card tags and a 1200x630 preview picture. The pictures are cropped from the scene's stills by the media pipeline: the landing page uses the opening view, the Summary the Summit, and the Projects the Trailhead, Long Approach, Steep Switch, Ridge and High Camp views in order (a sixth Project wraps round to the Trailhead). The landing page also carries structured data (a schema.org Person: name, headline as job title, email, LinkedIn and GitHub; no phone number).
+- **`SITE_URL`** in `.env` is the site's public address (default `http://localhost:<CADDY_PORT>`). Canonical addresses, the sitemap and the preview picture addresses are written from it, so set it to the real address and re-run the pre-render when deploying.
+- **Not found**: an address that is not a page answers `404` with the app's not-found page (an unknown Project slug gets the "Project not found" page). `/status` is a real page, marked `noindex` and disallowed in `robots.txt`, as is `/api/`.
 
 Cache hit, miss and error counts are at `http://api:9100/metrics` inside the Compose network (not published, not proxied by Caddy). Request count and duration by route and status, and the database pool's state, are in the same endpoint. Clear the cache by hand with `docker compose run --rm api python -m app.clear_cache`; it leaves the Visitor salt and rate-limit counters alone. Tunables: `CACHE_TTL_SECONDS`, `CACHE_TIMEOUT_SECONDS`, `METRICS_PORT`.
 
@@ -143,7 +159,7 @@ Hot reload for the API (uvicorn `--reload`, `backend/` mounted) and the frontend
 docker compose -f compose.yaml -f compose.dev.yaml up -d --build --wait
 ```
 
-Same URL as above. Dev images are named separately from the production ones, and `--build` picks up dependency changes (the first build installs npm packages and takes a few minutes).
+Same URL as above. Pages are drawn in the browser here (no pre-rendering). Dev images are named separately from the production ones, and `--build` picks up dependency changes (the first build installs npm packages and takes a few minutes).
 
 ## Tests and checks
 

@@ -10,7 +10,8 @@ import { TagList } from "../components/TagList";
 import { useSummary } from "../api/useSummary";
 import type { MediaItem, Profile, Project } from "../api/types";
 import { displayUrl } from "../displayUrl";
-import { usePageTitle } from "../usePageTitle";
+import { summaryHead, titled } from "../head/model";
+import { useHead, useSiteUrl } from "../head/useHead";
 
 const SECTIONS = [
   { id: "experience", label: "Experience" },
@@ -28,8 +29,13 @@ const h2Class = "text-xl font-semibold tracking-snug";
 
 /** The Summary: the career on one plain page. Data comes from the API. */
 export function SummaryPage() {
-  usePageTitle("Summary");
   const state = useSummary();
+  const siteUrl = useSiteUrl();
+  useHead(
+    state.status === "ready"
+      ? summaryHead(state.profile, { siteUrl, media: state.media })
+      : titled("Summary"),
+  );
 
   if (state.status === "loading") return <SummarySkeleton />;
   if (state.status === "error") {

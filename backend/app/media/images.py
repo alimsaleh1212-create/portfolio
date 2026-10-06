@@ -13,6 +13,8 @@ from PIL import Image, ImageCms, ImageOps
 PORTRAIT_WIDTHS = (320, 480, 640, 960, 1280)
 POSTER_WIDTHS = (640, 960, 1280, 1920)
 STILL_WIDTHS = {"wide": (640, 1024, 1600), "narrow": (360, 585)}
+# Link previews (Open Graph, Twitter cards) are 1.91:1; networks show 1200x630.
+PREVIEW_SIZE = (1200, 630)
 AVIF_QUALITY = 58
 WEBP_QUALITY = 80
 JPEG_QUALITY = 82
@@ -118,3 +120,27 @@ def render_images(source: Path, wanted_widths: tuple[int, ...]) -> list[Rendered
                 )
             )
     return results
+
+
+def render_preview(source: Path, size: tuple[int, int] = PREVIEW_SIZE) -> RenderedImage:
+    """Crop a picture to a link-preview size and encode it as a JPEG.
+
+    The crop fills the frame and keeps the centre, so the mountain stays in view. JPEG
+    because that is what every crawler and chat application reads.
+
+    Args:
+        source: Path of the source picture.
+        size: Width and height of the result.
+    """
+    with Image.open(source) as opened:
+        oriented = ImageOps.exif_transpose(opened) or opened
+        rgb = _to_srgb(oriented)
+    fitted = ImageOps.fit(rgb, size, Image.Resampling.LANCZOS)
+    fitted.info.clear()
+    return RenderedImage(
+        format="jpeg",
+        content_type=FORMATS["jpeg"][1],
+        width=size[0],
+        height=size[1],
+        data=_encode(fitted, "jpeg"),
+    )

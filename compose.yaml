@@ -172,7 +172,31 @@ services:
       timeout: 3s
       retries: 10
 
-  # Serves the built frontend (baked into the image) and proxies /api/ to the API.
+  # One-shot job: draws the landing page, the Summary and every Project page from the seeded
+  # content with the real React app and writes the HTML, sitemap.xml and robots.txt to the
+  # `site` volume, which Caddy serves. It waits for the API (and so for the seed) and Caddy
+  # waits for it. After a manual seed, publish the new text with no rebuild:
+  #   docker compose run --rm prerender
+  # It only reads the API; it never starts a Visit.
+  prerender:
+    build:
+      context: .
+      dockerfile: infra/caddy/Dockerfile
+      target: prerender
+    image: ali-portfolio-prerender
+    environment:
+      API_URL: http://api:8000
+      # The site's public address, for canonical addresses, the sitemap and image links.
+      SITE_URL: ${SITE_URL:-http://localhost:${CADDY_PORT:-8080}}
+    volumes:
+      - site:/site
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: "no"
+
+  # Serves the built frontend (baked into the image), the pages the prerender job wrote, and
+  # proxies /api/ to the API.
   caddy:
     build:
       context: .
@@ -183,11 +207,15 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET:-portfolio-media}
     ports:
       - "${CADDY_PORT:-8080}:80"
+    volumes:
+      - site:/srv/pages:ro
     depends_on:
       api:
         condition: service_healthy
       minio:
         condition: service_healthy
+      prerender:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/caddy-health"]
       interval: 5s
@@ -393,6 +421,7 @@ services:
       retries: 20
 
 volumes:
+  site:
   postgres_data:
   redis_data:
   minio_data:

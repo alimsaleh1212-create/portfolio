@@ -12,7 +12,8 @@ import { SummitAhead } from "../climb/SummitAhead";
 import { SceneHost } from "../scene/SceneHost";
 import { StillBackdrop } from "../still/StillBackdrop";
 import { useTier } from "../tier/tier";
-import { usePageTitle } from "../usePageTitle";
+import { landingHead, SITE_NAME } from "../head/model";
+import { useHead, useSiteUrl } from "../head/useHead";
 import { recordStageReached } from "../visit/visit";
 
 // The trail switches back up the slope, so the text changes sides from Stage to Stage.
@@ -26,8 +27,13 @@ const SIDES = {
 
 /** The Climb: the opening screen, the five Stages, the Summit ahead and the contact section. */
 export function ClimbPage() {
-  usePageTitle("Climb");
   const state = useClimbContent();
+  const siteUrl = useSiteUrl();
+  useHead(
+    state.status === "ready"
+      ? landingHead(state.profile, { siteUrl, media: state.media })
+      : { title: SITE_NAME },
+  );
   if (state.status === "loading") return <ClimbSkeleton />;
   if (state.status === "error") {
     return <ClimbError retry={state.retry} retrying={state.retrying} />;

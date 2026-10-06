@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
-import { usePageTitle } from "../usePageTitle";
+import { unlistedHead } from "../head/model";
+import { useHead } from "../head/useHead";
 import { fetchReadiness, type ReadinessResult } from "../api/readiness";
 
 const DEPENDENCIES = [
@@ -12,7 +13,7 @@ const DEPENDENCIES = [
 type State = { kind: "loading" } | ReadinessResult;
 
 export function ReadinessPage() {
-  usePageTitle("Status");
+  useHead(unlistedHead("Status"));
   const [state, setState] = useState<State>({ kind: "loading" });
 
   useEffect(() => {

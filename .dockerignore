@@ -7,3 +7,5 @@ backend
 **/node_modules
 **/dist
 **/__pycache__
+**/dist-prerender
+**/prerendered

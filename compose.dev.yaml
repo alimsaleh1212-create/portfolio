@@ -43,6 +43,12 @@ services:
       timeout: 3s
       retries: 20
 
+  # Dev mode serves the Vite dev server, which draws pages in the browser, so nothing is
+  # pre-rendered and Caddy does not wait for it. (Run it by hand if you want to see the output:
+  # docker compose -f compose.yaml -f compose.dev.yaml run --rm prerender)
+  prerender:
+    profiles: [prerender]
+
   caddy:
     # Use the stock image with the dev Caddyfile instead of the baked build.
     build: !reset null
@@ -52,6 +58,7 @@ services:
       - ./infra/caddy/media.caddy:/etc/caddy/media.caddy:ro
       - ./infra/caddy/compress.caddy:/etc/caddy/compress.caddy:ro
     depends_on:
+      prerender: !reset null
       frontend:
         condition: service_healthy
       minio:

@@ -259,39 +259,56 @@ export const stages: Stage[] = [
   ),
 ];
 
-/** The still tier's pictures: each position in a wide and a narrow composition. */
+const POSITIONS = [
+  "opening",
+  "trailhead",
+  "long-approach",
+  "steep-switch",
+  "ridge",
+  "high-camp",
+  "summit",
+];
+
+/** The 1200x630 link-preview crop the media pipeline makes of each wide still. */
+const previews: MediaVariant[] = POSITIONS.map((position) => ({
+  kind: "still",
+  format: "jpeg",
+  content_type: "image/jpeg",
+  url: `/media/still-${position}-preview-w1200-abc.jpg`,
+  size_bytes: 90_000,
+  width: 1200,
+  height: 630,
+  name: `${position}-preview`,
+}));
+
+/** The still tier's pictures: each position in a wide and a narrow composition, and a preview crop. */
 export const stillsItem: MediaItem = {
   role: "stills",
   alt: null,
   download_name: null,
   duration_seconds: null,
   variants: [
-    "opening",
-    "trailhead",
-    "long-approach",
-    "steep-switch",
-    "ridge",
-    "high-camp",
-    "summit",
-  ].flatMap((position) =>
-    (
-      [
-        ["wide", [640, 1024, 1600], 1.6],
-        ["narrow", [360, 585], 0.4875],
-      ] as const
-    ).flatMap(([composition, sizes, ratio]) =>
-      sizes.flatMap((width) =>
-        formats.map((format) => ({
-          ...image(
-            "still",
-            format,
-            `${position}-${composition}`,
-            width,
-            Math.round(width / ratio),
-          ),
-          name: `${position}-${composition}`,
-        })),
+    ...POSITIONS.flatMap((position) =>
+      (
+        [
+          ["wide", [640, 1024, 1600], 1.6],
+          ["narrow", [360, 585], 0.4875],
+        ] as const
+      ).flatMap(([composition, sizes, ratio]) =>
+        sizes.flatMap((width) =>
+          formats.map((format) => ({
+            ...image(
+              "still",
+              format,
+              `${position}-${composition}`,
+              width,
+              Math.round(width / ratio),
+            ),
+            name: `${position}-${composition}`,
+          })),
+        ),
       ),
     ),
-  ),
+    ...previews,
+  ],
 };

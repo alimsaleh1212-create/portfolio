@@ -1,11 +1,14 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
 
+import { mediaQuery } from "../api/client";
 import { useProject } from "../api/useProject";
 import type { Project } from "../api/types";
 import { Button } from "../components/Button";
 import { ProjectGallery } from "../components/ProjectGallery";
 import { TagList } from "../components/TagList";
-import { usePageTitle } from "../usePageTitle";
+import { projectHead, titled, unlistedHead } from "../head/model";
+import { useHead, useSiteUrl } from "../head/useHead";
 import { useProjectOpened } from "../visit/useProjectOpened";
 
 const pageClass =
@@ -18,15 +21,20 @@ export function ProjectPage() {
   const { slug } = useParams();
   const state = useProject(slug);
 
-  const title =
+  const siteUrl = useSiteUrl();
+  // The preview picture comes from the media list; the page does not wait for it.
+  const media = useQuery(mediaQuery).data ?? [];
+  useHead(
     state.status === "ready"
-      ? state.project.name
+      ? projectHead(state.project, state.position - 1, { siteUrl, media })
       : state.status === "not-found"
-        ? "Project not found"
-        : state.status === "error"
-          ? "Project did not load"
-          : "Loading project";
-  usePageTitle(title);
+        ? unlistedHead("Project not found")
+        : titled(
+            state.status === "error"
+              ? "Project did not load"
+              : "Loading project",
+          ),
+  );
   // Only a Project that exists counts as opened, not an unknown address.
   useProjectOpened(state.status === "ready" ? state.project.slug : undefined);
 

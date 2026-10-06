@@ -57,14 +57,67 @@ import /etc/caddy/compress.caddy
 		file_server
 	}
 
-	# The HTML document and anything not named by hash (the favicon). The browser
-	# may keep a copy but must revalidate it, which file_server answers with a 304
-	# from the file's ETag, so a new deployment reaches returning Visitors at once.
+	# The pages the pre-render job wrote to the shared volume (compose.yaml, service
+	# `prerender`): a page is /srv/pages/<path>.html, and / is index.html. They and the
+	# favicon are kept by the browser but must be revalidated, which file_server answers
+	# with a 304 from the file's ETag, so a re-seed and a re-run reach returning Visitors
+	# at once. An address with no page is a 404 (see handle_errors below), never the app.
 	handle {
 		import compress
-		root * /srv
 		header Cache-Control "no-cache"
-		try_files {path} /index.html
-		file_server
+
+		# One address per page: /summary/ goes to /summary.
+		@slash path_regexp slash ^/(.+)/$
+		redir @slash /{re.slash.1} 308
+
+		@page file {
+			root /srv/pages
+			try_files {path}.html {path}index.html
+		}
+		handle @page {
+			root * /srv/pages
+			rewrite * {http.matchers.file.relative}
+			file_server
+		}
+
+		handle /robots.txt {
+			root * /srv/pages
+			file_server
+		}
+		handle /sitemap.xml {
+			root * /srv/pages
+			file_server
+		}
+
+		# The favicon and the other files the build put beside the assets. The pages'
+		# template (index.html) is not here, so it is a 404 like any other miss.
+		handle {
+			root * /srv
+			file_server
+		}
+	}
+
+	# A miss answers 404. Most addresses get the app's not-found page; one under /projects/
+	# gets the page drawn for a Project that does not exist, so each hydrates as the router
+	# will read the address. A missing asset or file stays a plain 404 with no body.
+	handle_errors {
+		@missing expression {err.status_code} == 404
+		handle @missing {
+			@project path_regexp ^/projects/[^/]+$
+			@plain path /assets/* /favicon.svg /robots.txt /sitemap.xml
+			handle @plain {
+				respond 404
+			}
+			handle @project {
+				root * /srv/pages
+				rewrite * /404-project.html
+				file_server
+			}
+			handle {
+				root * /srv/pages
+				rewrite * /404.html
+				file_server
+			}
+		}
 	}
 }
