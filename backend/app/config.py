@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     content_dir: Path = Path("/content")
     # Folder holding the source photograph, video and PDF, mounted read-only.
     media_source_dir: Path = Path("/media-source")
+    # A Visit accepts events for this long after it starts.
+    visit_max_age_hours: int = 24
+    # Requests per client per minute; beyond them the API answers 429.
+    visit_start_limit_per_minute: int = 20
+    visit_event_limit_per_minute: int = 120
 
 
 @lru_cache

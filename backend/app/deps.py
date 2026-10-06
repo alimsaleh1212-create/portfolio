@@ -7,6 +7,7 @@ from fastapi import Depends, Request
 from app.services.content import ContentService
 from app.services.health import HealthService
 from app.services.media import MediaService
+from app.services.visits import VisitService
 
 
 def get_health_service(request: Request) -> HealthService:
@@ -31,3 +32,11 @@ def get_media_service(request: Request) -> MediaService:
 
 
 MediaServiceDep = Annotated[MediaService, Depends(get_media_service)]
+
+
+def get_visit_service(request: Request) -> VisitService:
+    """Return the Visit service built at startup."""
+    return cast(VisitService, request.app.state.visit_service)
+
+
+VisitServiceDep = Annotated[VisitService, Depends(get_visit_service)]

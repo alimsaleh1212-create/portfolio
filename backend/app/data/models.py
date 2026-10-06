@@ -6,17 +6,21 @@ worth a table of their own. Stages and Projects are real tables, each with a
 unique key and an explicit position for ordering.
 """
 
+import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
     Float,
+    ForeignKey,
     Integer,
     String,
     Text,
     UniqueConstraint,
+    Uuid,
     func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
@@ -99,3 +103,38 @@ class MediaItemRow(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class VisitRow(Base):
+    """One Visit: one page load of the site.
+
+    There is no Progress column. Progress is derived from the Visit's Stage
+    reached events by the `visit_progress` view, so it cannot disagree with them.
+    `visitor_hash` is the daily Visitor hash, or NULL when Redis was down.
+    """
+
+    __tablename__ = "visits"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, primary_key=True, server_default=func.gen_random_uuid()
+    )
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    referrer_host: Mapped[str | None] = mapped_column(Text)
+    device_class: Mapped[str] = mapped_column(String(8))
+    tier: Mapped[str | None] = mapped_column(String(8))
+    visitor_hash: Mapped[str | None] = mapped_column(String(32))
+
+
+class VisitEventRow(Base):
+    """One event within a Visit. Deleting a Visit deletes its events."""
+
+    __tablename__ = "visit_events"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    visit_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("visits.id", ondelete="CASCADE")
+    )
+    type: Mapped[str] = mapped_column(String(24))
+    stage_key: Mapped[str | None] = mapped_column(String(32))
+    project_slug: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
