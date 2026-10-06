@@ -38,7 +38,7 @@
   for (const t of texts) {
     t.covered = fixed.some(({ el, r }) => {
       const cx = (t.r[0] + t.r[2]) / 2, cy = (t.r[1] + t.r[3]) / 2;
-      return (cx > r.left && cx < r.right && cy > r.top && cy < r.bottom && !el.contains(t.el));
+      return (cx > r.left && cx < r.right && cy > r.top && cy <= r.bottom && !el.contains(t.el));
     });
     delete t.el;
   }

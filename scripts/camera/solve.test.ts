@@ -56,12 +56,14 @@ function evaluate(v: number[]) {
   cost += Math.max(0, R.l - box.l) * 30 + Math.max(0, box.r - R.r) * 30;
   cost += Math.max(0, R.t - box.t) * 30 + Math.max(0, box.b - R.b) * 30;
   cost += Math.max(0, R.hMin - height) * 20 + Math.max(0, height - R.hMax) * 20;
-  // A clear line of sight: no ground between the eye and the Hiker's head.
-  const head = hiker.clone().setY(hiker.y + HIKER_HEIGHT * 0.8);
-  for (let i = 1; i < 80; i++) {
-    const p = eye.clone().lerp(head, i / 80);
-    const g = world.terrain.heightAt(p.x, p.z);
-    if (g > p.y - 0.5) cost += 300 + (g - p.y) * 100;
+  // A clear line of sight to the feet, the middle and the head: no ground between the eye and them.
+  for (const at of [0.25, HIKER_HEIGHT * 0.5, HIKER_HEIGHT * 0.9]) {
+    const target = hiker.clone().setY(hiker.y + at);
+    for (let i = 1; i < 120; i++) {
+      const p = eye.clone().lerp(target, i / 120);
+      const g = world.terrain.heightAt(p.x, p.z);
+      if (g > p.y - 0.3) cost += 200 + (g - p.y) * 100;
+    }
   }
   cost += Math.hypot(v[0], v[1], v[2]) * 1.5 + (Math.abs(v[3]) + Math.abs(v[4])) * 800;
   return { cost, x, footY, height };

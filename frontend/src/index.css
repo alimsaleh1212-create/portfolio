@@ -279,8 +279,8 @@
   /* A soft shade down the right edge, behind the altitude meter's rail. */
   --background-image-rail-shade: linear-gradient(
     270deg,
-    color-mix(in srgb, var(--color-ground) 70%, transparent),
-    color-mix(in srgb, var(--color-ground) 42%, transparent) 55%,
+    color-mix(in srgb, var(--color-ground) 82%, transparent),
+    color-mix(in srgb, var(--color-ground) 60%, transparent) 55%,
     transparent
   );
   /* The scene's last stretch settles into the slope the contact section sits on. */
