@@ -1,7 +1,6 @@
 import { useId, useRef, useState, type FormEvent } from "react";
 
 import {
-  LIMITS,
   sendMessage,
   validate,
   type ContactField,
