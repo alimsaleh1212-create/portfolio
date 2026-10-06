@@ -41,6 +41,15 @@ The site records each Visit (one page load) and how far up the Climb it got, and
 - Progress is derived, not stored. The views `visit_progress` (each Visit's highest Stage) and `visits_per_stage` (a funnel in Climb order: the Visits whose Progress is that Stage or higher) are what Grafana reads.
 - Caddy writes no access log on purpose and passes the client address to the API in `X-Forwarded-For`, replacing whatever the client sent.
 
+## Contact messages
+
+`POST /api/v1/contact` takes `{"name", "email", "message"}` and stores it in `contact_messages`; it is the one place personal details are kept, because the Visitor typed them in (ADR 0002). A message is not linked to a Visit.
+
+- Answers: `201 {"received": true}`; `422` with `{"errors": {"<field>": "<message>"}}` (names up to 100 characters, a real address up to 254, a message of 10 to 4000 characters; line breaks and control codes are refused in the name and address, and the answer never echoes the input); `429` with `Retry-After` past 3 messages per client per hour (`CONTACT_LIMIT_PER_HOUR`); bodies over 32 KiB get `413`.
+- The honeypot is an extra `website` field. A filled one gets the same `201` and nothing is stored or emailed.
+- Email delivery is on only when `SMTP_HOST`, `MAIL_SENDER` and `MAIL_RECIPIENT` are all set. Also `SMTP_PORT` (587), `SMTP_USERNAME` and `SMTP_PASSWORD`, `SMTP_SECURITY` (`starttls`, `tls` or `none`). The message goes to `MAIL_RECIPIENT` with the Visitor's address as Reply-To. It is one attempt after the response is sent, so a mail failure never fails the request or loses the stored message. They are all listed, commented out, in `.env.example`.
+- Logs record the message ID and whether delivery was attempted and succeeded, never the name, address or text. To read messages without email, query the table (a Grafana panel comes with ticket #13).
+
 ## Content and the seed command
 
 All copy lives in `content/` and comes from Ali's CV: first person, with roles, dates and metrics as the CV has them (a metric is a `value` and a `label`). Each file is validated against a schema (`backend/app/content/schema.py`).
