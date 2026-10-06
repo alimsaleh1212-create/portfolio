@@ -18,6 +18,8 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 W, H = int(sys.argv[1]), int(sys.argv[2])
 BASE = sys.argv[3] if len(sys.argv) > 3 else "http://localhost:8080"
+# SCAN_TIER=still scans the still tier (no scene to probe: it waits for the pictures instead).
+TIER = os.environ.get("SCAN_TIER", "full")
 OUT = sys.argv[4] if len(sys.argv) > 4 else "."
 os.environ.setdefault("AGENT_BROWSER_ARGS", "--no-sandbox,--use-angle=swiftshader,--enable-unsafe-swiftshader,--ignore-gpu-blocklist")
 PAGE_JS = open(os.path.join(HERE, "scan-text.js")).read()
@@ -55,6 +57,9 @@ def parse_color(s):
     return r, g, b, a
 
 def settle():
+    if TIER == "still":
+        time.sleep(1.2)
+        return
     last, same = None, 0
     for _ in range(40):
         cur = ev("var h=window.probeHiker().hiker;h?h.journey.toFixed(4)+' '+h.walking.toFixed(3):''")
@@ -66,8 +71,8 @@ def settle():
     time.sleep(0.5)
 
 ab("set", "viewport", str(W), str(H))
-ab("open", f"{BASE}/?debug")
-for _ in range(40):
+ab("open", f"{BASE}/?tier={TIER}&debug")
+for _ in range(40 if TIER != "still" else 0):
     if ev("var p=window.probeHiker&&window.probeHiker();p&&p.hiker&&p.hiker.world[1]!==0?'ok':''") == "ok":
         break
     time.sleep(0.7)

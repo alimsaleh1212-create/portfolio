@@ -1,0 +1,78 @@
+{
+  "note": "Written by frontend/scripts/capture-stills.mjs. Do not edit. `npm test` fails when the fingerprint no longer matches the scene.",
+  "fingerprint": "199805511f20da22045bcf3f261298b7984af99694d4c5f25b50c056c7779302",
+  "compositions": {
+    "wide": {
+      "viewport": {
+        "width": 1600,
+        "height": 1000
+      },
+      "scale": 1
+    },
+    "narrow": {
+      "viewport": {
+        "width": 390,
+        "height": 800
+      },
+      "scale": 1.5
+    }
+  },
+  "files": {
+    "opening-wide.png": {
+      "journey": 0,
+      "hiker": "1.00"
+    },
+    "trailhead-wide.png": {
+      "journey": 0.9996,
+      "hiker": "1.00"
+    },
+    "long-approach-wide.png": {
+      "journey": 1.9996,
+      "hiker": "1.00"
+    },
+    "steep-switch-wide.png": {
+      "journey": 2.9996,
+      "hiker": "1.00"
+    },
+    "ridge-wide.png": {
+      "journey": 3.9996,
+      "hiker": "1.00"
+    },
+    "high-camp-wide.png": {
+      "journey": 4.9996,
+      "hiker": "1.00"
+    },
+    "summit-wide.png": {
+      "journey": 5.9997,
+      "hiker": "1.00"
+    },
+    "opening-narrow.png": {
+      "journey": 0,
+      "hiker": "1.00"
+    },
+    "trailhead-narrow.png": {
+      "journey": 0.9996,
+      "hiker": "1.00"
+    },
+    "long-approach-narrow.png": {
+      "journey": 1.9995,
+      "hiker": "1.00"
+    },
+    "steep-switch-narrow.png": {
+      "journey": 2.9995,
+      "hiker": "1.00"
+    },
+    "ridge-narrow.png": {
+      "journey": 3.9995,
+      "hiker": "1.00"
+    },
+    "high-camp-narrow.png": {
+      "journey": 5,
+      "hiker": "1.00"
+    },
+    "summit-narrow.png": {
+      "journey": 6,
+      "hiker": "1.00"
+    }
+  }
+}

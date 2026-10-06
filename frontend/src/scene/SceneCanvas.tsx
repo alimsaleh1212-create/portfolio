@@ -74,6 +74,9 @@ export default function SceneCanvas({
     [queryClient],
   );
   const [built, setBuilt] = useState<Built | null>(null);
+  // Edges are smoothed only where the canvas starts as full: a context's antialiasing cannot
+  // change once it exists, so a full tier that drops to light in place keeps it.
+  const [smooth] = useState(quality === "full");
   const [drawn, setDrawn] = useState(false);
   const onDrawnRef = useRef(onDrawn);
   useEffect(() => {
@@ -86,7 +89,20 @@ export default function SceneCanvas({
     let cancelled = false;
     void (async () => {
       const colors = readSceneColors();
-      const { world, parts } = await buildMountain(quality, colors);
+      const started = performance.now();
+      const { world, parts, longestSliceMs } = await buildMountain(
+        quality,
+        colors,
+      );
+      if (debug) {
+        // For measuring from the console or a test: how long the build took, and the longest
+        // stretch it held the main thread.
+        (window as unknown as Record<string, unknown>).sceneBuild = {
+          quality,
+          totalMs: performance.now() - started,
+          longestSliceMs,
+        };
+      }
       if (cancelled) {
         parts.dispose();
         return;
@@ -118,7 +134,7 @@ export default function SceneCanvas({
         dpr={[1, QUALITY[quality].maxPixelRatio]}
         flat
         gl={{
-          antialias: true,
+          antialias: smooth,
           alpha: false,
           powerPreference: "high-performance",
         }}
