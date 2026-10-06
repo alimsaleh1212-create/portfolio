@@ -38,17 +38,20 @@ LEFT JOIN LATERAL (
 ) top ON true
 """
 
-# How many Visits reached each Stage, in Climb order. Every Stage appears, with
-# zero when no Visit reached it. A Visit counts once per Stage (unique index).
+# A funnel: for each Stage, the number of Visits whose Progress is that Stage or
+# a higher one. A Visit that got to the Ridge got past every Stage below it, even
+# when their events are missing (a fast scroll, a jump), so the counts never
+# increase going up the mountain. Every Stage appears, in Climb order, with zero
+# when no Visit got that far.
 VISITS_PER_STAGE_VIEW = """
 CREATE VIEW visits_per_stage AS
 SELECT
     s.position AS stage_position,
     s.key AS stage_key,
     s.name AS stage_name,
-    count(e.visit_id) AS visits
+    count(p.visit_id) AS visits
 FROM stages s
-LEFT JOIN visit_events e ON e.stage_key = s.key AND e.type = 'stage_reached'
+LEFT JOIN visit_progress p ON p.progress_stage_position >= s.position
 GROUP BY s.position, s.key, s.name
 ORDER BY s.position
 """

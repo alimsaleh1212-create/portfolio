@@ -86,18 +86,47 @@ def test_the_progress_view_carries_the_stage_position(
     assert row["started_at"].tzinfo is not None
 
 
-def test_visits_per_stage_counts_each_stage_in_climb_order(
+def test_visits_per_stage_is_a_funnel_in_climb_order(
     database_url: str, prepared: dict[str, uuid.UUID]
 ) -> None:
     got = fetch_all(database_url, "SELECT * FROM visits_per_stage")
 
     assert [(r["stage_key"], r["visits"]) for r in got] == [
         ("trailhead", 4),
-        ("long-approach", 2),
-        ("steep-switch", 2),
+        ("long-approach", 3),
+        ("steep-switch", 3),
         ("ridge", 2),
         ("high-camp", 1),
     ]
+
+
+def test_a_visit_counts_for_the_stages_below_its_progress_even_without_their_events(
+    database_url: str,
+) -> None:
+    add_visit(database_url, "trailhead", "ridge")
+
+    got = fetch_all(database_url, "SELECT stage_key, visits FROM visits_per_stage")
+
+    assert [(r["stage_key"], r["visits"]) for r in got] == [
+        ("trailhead", 1),
+        ("long-approach", 1),
+        ("steep-switch", 1),
+        ("ridge", 1),
+        ("high-camp", 0),
+    ]
+
+
+def test_the_funnel_never_grows_going_up_the_mountain(
+    database_url: str, prepared: dict[str, uuid.UUID]
+) -> None:
+    add_visit(database_url, "high-camp")
+
+    counts = [
+        r["visits"]
+        for r in fetch_all(database_url, "SELECT visits FROM visits_per_stage")
+    ]
+
+    assert counts == sorted(counts, reverse=True)
 
 
 def test_visits_per_stage_lists_every_stage_when_there_are_no_visits(
