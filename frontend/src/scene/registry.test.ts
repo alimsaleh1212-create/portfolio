@@ -77,3 +77,22 @@ describe("the scene's interface for later work", () => {
     expect(getClimbScene()).toBe(second);
   });
 });
+
+describe("the scene in React", () => {
+  it("gives components the scene once it mounts, and null after it goes", async () => {
+    const { act, renderHook } = await import("@testing-library/react");
+    const { useClimbScene } = await import("./registry");
+    const { result } = renderHook(() => useClimbScene());
+    expect(result.current).toBeNull();
+    const scene = sceneFor();
+    act(() => {
+      withdraw = registerClimbScene(scene);
+    });
+    expect(result.current).toBe(scene);
+    act(() => {
+      withdraw?.();
+      withdraw = null;
+    });
+    expect(result.current).toBeNull();
+  });
+});
