@@ -143,6 +143,8 @@ export class SceneController {
       walking: hiker.walking,
       cycles: hiker.walkCycles,
       stride: hiker.stride,
+      ankles: hiker.anklePositions(),
+      slip: [hiker.slipRatio(), hiker.slipRatio(true)],
       gap: lowest - world.terrain.heightAt(feet.x, feet.z),
       journey: this.current,
     };

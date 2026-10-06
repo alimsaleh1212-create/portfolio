@@ -36,7 +36,7 @@ export const HIKER_HEIGHT = 3.4;
 /** Below this ground speed (scene units a second) the Hiker is standing, not walking. */
 const MOVING_SPEED = 0.2;
 /** The walk plays at most this many cycles a second, so a hard fling does not strobe. */
-const MAX_CYCLES_PER_SECOND = 3;
+const MAX_CYCLES_PER_SECOND = 4;
 /** How quickly the walk fades in and out, and how quickly the Hiker turns, per second. */
 const BLEND_RATE = 14;
 const TURN_RATE = 7;
@@ -61,9 +61,37 @@ export function turnBetween(from: number, to: number): number {
   return turn;
 }
 
-/** How far through its cycle the walk is, after the Hiker covered `distance` with a stride of `stride`. */
-export function cyclesFor(distance: number, stride: number): number {
-  return stride > 0 ? Math.abs(distance) / stride : 0;
+/**
+ * The walk cycle's relation to the ground: `travel[i]` is how far the body has to have gone, in
+ * scene units, for the foot on the ground to have moved back as far as the animation moves it
+ * by sample `i` of the cycle. It is made from the animation itself, so a foot on the ground
+ * stays where it is however unevenly the animation moves it, and it ends at the stride: the
+ * ground one whole cycle covers.
+ */
+export interface Gait {
+  /** Ground covered by one cycle, in scene units. */
+  stride: number;
+  /** Cumulative ground at each of `samples + 1` evenly spaced points of the cycle. */
+  travel: number[];
+}
+
+/** How far through the walk cycle (0 to 1) the body is, after it has gone `ground` along the trail. */
+export function phaseAt(gait: Gait, ground: number): number {
+  const { stride, travel } = gait;
+  if (stride <= 0 || travel.length < 2) return 0;
+  const samples = travel.length - 1;
+  const cycles = Math.floor(ground / stride);
+  const along = ground - cycles * stride;
+  let low = 0;
+  let high = samples;
+  while (high - low > 1) {
+    const mid = (low + high) >> 1;
+    if (travel[mid] <= along) low = mid;
+    else high = mid;
+  }
+  const span = travel[high] - travel[low];
+  const fraction = span > 0 ? (along - travel[low]) / span : 0;
+  return Math.min(1 - 1e-9, (low + fraction) / samples);
 }
 
 /** The lantern's strength: lit while stars show, gone as the sun comes. `stars` is the light's 0 to 1. */
@@ -83,45 +111,46 @@ function findByName(root: Object3D, name: string): Object3D | undefined {
 }
 
 /**
- * How far the model travels in one walk cycle, in its own units: the speed of the foot that is
- * on the ground, over the cycle. The walk is driven by distance divided by this, so the feet
- * keep to the ground.
+ * Measure the walk against the ground (see `Gait`): at each step through the cycle, how far
+ * back the foot that is lower moves. Walking is driven by this, so the planted foot is held
+ * still on the ground; the other foot is in the air and may do as it likes.
  */
-export function measureStride(
+export function measureGait(
   figure: Object3D,
   mixer: AnimationMixer,
   walk: AnimationAction,
-  samples = 48,
-): number {
+  samples = 96,
+): Gait {
   const left = findByName(figure, "foot.l");
   const right = findByName(figure, "foot.r");
-  if (!left || !right) return 0;
+  const none = { stride: 0, travel: [0, 0] };
+  if (!left || !right) return none;
+  figure.parent?.updateMatrixWorld(true);
   const duration = walk.getClip().duration;
   const a = new Vector3();
   const b = new Vector3();
-  const rows: { y: number; z: number; foot: number }[] = [];
-  walk.paused = false;
+  const rows: { y: number[]; z: number[] }[] = [];
   for (let i = 0; i <= samples; i++) {
     walk.time = (i / samples) * duration;
     mixer.update(0);
     figure.updateMatrixWorld(true);
     left.getWorldPosition(a);
     right.getWorldPosition(b);
-    const leftLower = a.y < b.y;
-    const foot = leftLower ? a : b;
-    rows.push({ y: foot.y, z: foot.z, foot: leftLower ? 0 : 1 });
+    rows.push({ y: [a.y, b.y], z: [a.z, b.z] });
   }
-  let total = 0;
-  let count = 0;
+  const steps: number[] = [];
   for (let i = 1; i < rows.length; i++) {
-    if (rows[i].foot !== rows[i - 1].foot) continue;
-    total += -(rows[i].z - rows[i - 1].z);
-    count += 1;
+    const foot = rows[i].y[0] < rows[i].y[1] ? 0 : 1;
+    steps.push(Math.max(0, rows[i - 1].z[foot] - rows[i].z[foot]));
   }
-  if (count === 0) return 0;
-  // The planted foot moves back at the walking speed; over a whole cycle the body goes
-  // as far forward as that foot's speed times the cycle's length.
-  return Math.max(0, (total / count) * samples);
+  const total = steps.reduce((sum, step) => sum + step, 0);
+  if (total <= 0) return none;
+  // The cycle never stands still: a floor keeps the table strictly rising, so it can be inverted.
+  const floor = (total / steps.length) * 0.05;
+  const travel = [0];
+  for (const step of steps)
+    travel.push(travel[travel.length - 1] + step + floor);
+  return { stride: travel[travel.length - 1], travel };
 }
 
 export interface HikerOptions {
@@ -153,13 +182,17 @@ export class Hiker {
   private readonly lanternMaterial: MeshBasicMaterial;
   private readonly owned: Array<BufferGeometry | Material> = [];
   private readonly scale: number;
+  /** The walk against the ground, measured from the model. */
+  private readonly gait: Gait;
   /** Ground the Hiker covers in a walk cycle, in scene units. */
   readonly stride: number;
   private distance: number | null = null;
-  private cycles = 0;
+  /** Ground walked so far, in scene units, which the cycle is read from. */
+  private travel = 0;
   private blend = 0;
   private heading = 0;
   private started = false;
+  private readonly feet: Object3D[];
   private readonly world = new Vector3();
   private readonly lanternBox = new Vector3();
 
@@ -187,8 +220,15 @@ export class Hiker {
       action.play();
       action.timeScale = 0;
     }
-    const strideInModel = measureStride(model, this.mixer, this.walk);
-    this.stride = strideInModel * this.scale;
+    this.feet = [
+      findByName(model, "foot.l"),
+      findByName(model, "foot.r"),
+    ].filter((bone): bone is Object3D => bone !== undefined);
+    // Measured with only the walk showing and the figure already scaled: scene units.
+    this.walk.setEffectiveWeight(1);
+    this.idle.setEffectiveWeight(0);
+    this.gait = measureGait(model, this.mixer, this.walk);
+    this.stride = this.gait.stride;
     this.idle.time = 0;
     this.applyPose(0);
 
@@ -241,11 +281,12 @@ export class Hiker {
 
   /** How far through its walk cycle the Hiker is, as a count of cycles. */
   get walkCycles(): number {
-    return this.cycles;
+    return this.stride > 0 ? this.travel / this.stride : 0;
   }
 
   private applyPose(blend: number) {
-    this.walk.time = (this.cycles % 1) * this.walk.getClip().duration;
+    this.walk.time =
+      phaseAt(this.gait, this.travel) * this.walk.getClip().duration;
     this.walk.setEffectiveWeight(blend);
     this.idle.setEffectiveWeight(1 - blend);
     this.mixer.update(0);
@@ -261,6 +302,7 @@ export class Hiker {
     const t = scene.trailT();
     const distance = t * scene.trail.length;
     const step = this.distance === null ? 0 : distance - this.distance;
+    // Ground walked is measured in the Hiker's own size, so a larger one takes longer strides.
     this.distance = distance;
     const speed = Math.abs(step) / dt;
     const moving = speed > MOVING_SPEED;
@@ -293,8 +335,8 @@ export class Hiker {
     this.figure.rotation.y = this.heading;
 
     // The walk: only while moving, a cycle for each stride of ground.
-    const cap = (MAX_CYCLES_PER_SECOND * dt) / 1;
-    if (moving) this.cycles += Math.min(cap, cyclesFor(step, this.stride));
+    const cap = MAX_CYCLES_PER_SECOND * this.stride * dt;
+    if (moving) this.travel += Math.min(cap, Math.abs(step));
     const goal = moving ? 1 : 0;
     const fading = Math.abs(this.blend - goal) > 0.004;
     this.blend = fading
@@ -319,6 +361,62 @@ export class Hiker {
 
     this.started = true;
     return moving || fading || turning;
+  }
+
+  /**
+   * How much the foot on the ground slides, as a fraction of the distance covered (0 is none),
+   * as the body goes once round the cycle at a steady pace. With `even` the walk is run at an
+   * even rate through its cycle instead of by the gait, to show what that costs. For checking
+   * (the debug probe); it leaves the pose as it found it.
+   */
+  slipRatio(even = false, samples = 400): number {
+    const [left, right] = this.feet;
+    if (!left || !right || this.stride <= 0) return 0;
+    const duration = this.walk.getClip().duration;
+    const was = [
+      this.walk.getEffectiveWeight(),
+      this.idle.getEffectiveWeight(),
+      this.walk.time,
+    ];
+    this.walk.setEffectiveWeight(1);
+    this.idle.setEffectiveWeight(0);
+    const at = new Vector3();
+    const rows: { z: number; foot: number }[] = [];
+    for (let i = 0; i <= samples; i++) {
+      const ground = (i / samples) * this.stride;
+      const phase = even ? i / samples : phaseAt(this.gait, ground);
+      this.walk.time = phase * duration;
+      this.mixer.update(0);
+      this.figure.updateMatrixWorld(true);
+      const points = [left, right].map((bone) => {
+        bone.getWorldPosition(at);
+        return this.figure.worldToLocal(at.clone()).multiplyScalar(this.scale);
+      });
+      const lower = points[0].y < points[1].y ? 0 : 1;
+      rows.push({ z: points[lower].z, foot: lower });
+    }
+    let slid = 0;
+    let travelled = 0;
+    for (let i = 1; i < rows.length; i++) {
+      const [a, b] = [rows[i - 1], rows[i]];
+      if (a.foot !== b.foot) continue;
+      const body = this.stride / samples;
+      slid += Math.abs(body + (b.z - a.z));
+      travelled += body;
+    }
+    this.walk.setEffectiveWeight(was[0]);
+    this.idle.setEffectiveWeight(was[1]);
+    this.walk.time = was[2];
+    this.mixer.update(0);
+    return travelled > 0 ? slid / travelled : 0;
+  }
+
+  /** Where the ankles are in scene space (the left, then the right), for checking the feet do not slide. */
+  anklePositions(): number[][] {
+    this.object.updateMatrixWorld(true);
+    return this.feet.map((bone) =>
+      bone.getWorldPosition(new Vector3()).toArray(),
+    );
   }
 
   /** The lowest point of the Hiker's body in scene space, for checking the feet are on the ground. */
