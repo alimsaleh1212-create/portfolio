@@ -49,6 +49,16 @@ function readable(html: string): string {
     .replace(/\s+/g, " ");
 }
 
+// These tests load many pages in a minute, more than the API accepts Visits from one client
+// (`VISIT_START_LIMIT_PER_MINUTE`), and they would use up the allowance the Visit tests need. They
+// are about the pages, not the Visit, so the Visit's request is answered as a known bot's is (204,
+// nothing recorded).
+test.beforeEach(async ({ page }) => {
+  await page.route("**/api/v1/visits**", (route) =>
+    route.fulfill({ status: 204 }),
+  );
+});
+
 test.describe("without JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 
