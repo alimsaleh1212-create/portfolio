@@ -1,54 +1,17 @@
 import { CatmullRomCurve3, Vector3 } from "three";
 
 import type { ClimbState } from "../climb/climb";
+import { journeyAt, marksOf, progressAt } from "../climb/position";
 import { JOURNEY_LENGTH } from "./light";
 import { lerp } from "./noise";
 import { STAGE_KEYS, STAGE_TRAIL_T } from "./trail";
+
+export { journeyAt, progressAt };
 
 /**
  * The journey is one number, `u`: 0 on the opening screen, 1 to 5 at the five Stages and 6
  * at the Summit. The camera and the light are both pure functions of it.
  */
-
-/** Spacing for the Stages when the page has not measured them yet. */
-const EVEN = STAGE_KEYS.map((_, i) => i / (STAGE_KEYS.length - 1));
-
-/**
- * Where the Visitor is on the journey, from the Climb's position. The opening screen is 0 to
- * 1 (`lead`), the Stages 1 to 5 by where each really sits on the page, and the Summit's
- * stretch 5 to 6 (`tail`). Continuous at the joins, so scrolling back reverses it exactly.
- */
-export function journeyAt(
-  climb: Pick<ClimbState, "progress" | "lead" | "tail" | "stages">,
-): number {
-  const { progress } = climb;
-  if (progress <= 0) return climb.lead;
-  if (progress >= 1) return STAGE_KEYS.length + climb.tail;
-  const marks = marksOf(climb.stages);
-  for (let i = 0; i < marks.length - 1; i++) {
-    if (progress <= marks[i + 1]) {
-      const span = marks[i + 1] - marks[i];
-      return 1 + i + (span > 0 ? (progress - marks[i]) / span : 0);
-    }
-  }
-  return STAGE_KEYS.length;
-}
-
-/** The Stages' progress values, falling back to even spacing before the page is measured. */
-function marksOf(stages: ClimbState["stages"]): number[] {
-  return stages.length === STAGE_KEYS.length
-    ? stages.map((s) => s.position)
-    : EVEN;
-}
-
-/** The progress value for a point on the journey: the inverse of `journeyAt` across the Stages. */
-export function progressAt(u: number, stages: ClimbState["stages"]): number {
-  if (u <= 1) return 0;
-  if (u >= STAGE_KEYS.length) return 1;
-  const marks = marksOf(stages);
-  const i = Math.min(marks.length - 2, Math.floor(u - 1));
-  return lerp(marks[i], marks[i + 1], u - 1 - i);
-}
 
 /** Where on the trail (0 to 1) the Hiker is for a progress value, through the Stages' places. */
 export function trailTAt(

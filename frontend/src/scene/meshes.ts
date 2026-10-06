@@ -10,6 +10,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 
 import { createNoise, lerp, mulberry32, ridged, smoothstep } from "./noise";
 import type { SceneColors } from "./palette";
+import { drain, type Steps } from "./steps";
 import { BOUNDS, cellTriangles, faceNoise, type Terrain } from "./terrain";
 import type { World } from "./world";
 
@@ -25,6 +26,14 @@ export function buildTerrainGeometry(
   terrain: Terrain,
   colors: SceneColors,
 ): BufferGeometry {
+  return drain(terrainGeometrySteps(terrain, colors));
+}
+
+/** `buildTerrainGeometry` as pausable work (see `steps.ts`). */
+export function* terrainGeometrySteps(
+  terrain: Terrain,
+  colors: SceneColors,
+): Steps<BufferGeometry> {
   const { cellsX, cellsZ, vertices } = terrain;
   const faces = cellsX * cellsZ * 2;
   const positions = new Float32Array(faces * 9);
@@ -40,6 +49,7 @@ export function buildTerrainGeometry(
 
   let f = 0;
   for (let j = 0; j < cellsZ; j++) {
+    if (j % 6 === 0) yield;
     for (let i = 0; i < cellsX; i++) {
       const tri = cellTriangles(terrain, i, j);
       for (let k = 0; k < 6; k += 3) {
@@ -231,6 +241,14 @@ export interface TreePlan {
 
 /** Where the pines stand: the low, gentle ground, in clusters, never on the trail. */
 export function planTrees(world: World, trailKeepOut = 5): TreePlan {
+  return drain(treePlanSteps(world, trailKeepOut));
+}
+
+/** `planTrees` as pausable work (see `steps.ts`). */
+export function* treePlanSteps(
+  world: World,
+  trailKeepOut = 5,
+): Steps<TreePlan> {
   const random = mulberry32(world.seed * 31 + 5);
   const forest = createNoise(world.seed + 909);
   const { terrain, trail } = world;
@@ -240,6 +258,7 @@ export function planTrees(world: World, trailKeepOut = 5): TreePlan {
   const out: number[] = [];
   const { minX, maxX } = BOUNDS;
   for (let attempt = 0; attempt < 5200 && out.length < 6 * 640; attempt++) {
+    if (attempt % 400 === 0) yield;
     const x = lerp(minX + 20, maxX - 20, random());
     const z = lerp(-30, 124, random());
     const clump =

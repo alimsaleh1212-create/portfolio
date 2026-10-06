@@ -1,52 +1,7 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { readDebug, sceneSupported } from "./support";
+import { readDebug } from "./support";
 import { watchVisibility } from "./visibility";
-
-afterEach(() => {
-  vi.restoreAllMocks();
-  vi.unstubAllGlobals();
-});
-
-function contextOf(result: unknown) {
-  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
-    (() => result) as never,
-  );
-}
-
-describe("where the scene may be drawn", () => {
-  it("not where WebGL is unavailable", () => {
-    contextOf(null);
-    expect(sceneSupported()).toBe(false);
-  });
-
-  it("not where making a context throws", () => {
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
-      () => {
-        throw new Error("blocked");
-      },
-    );
-    expect(sceneSupported()).toBe(false);
-  });
-
-  it("where a context can be made, and it lets the test context go at once", () => {
-    const lose = vi.fn();
-    contextOf({ getExtension: () => ({ loseContext: lose }) });
-    expect(sceneSupported()).toBe(true);
-    expect(lose).toHaveBeenCalledTimes(1);
-  });
-
-  it("not where reduced motion is requested, even with WebGL", () => {
-    contextOf({ getExtension: () => null });
-    vi.stubGlobal("matchMedia", (query: string) => ({
-      matches: query.includes("reduce"),
-      media: query,
-      addEventListener() {},
-      removeEventListener() {},
-    }));
-    expect(sceneSupported()).toBe(false);
-  });
-});
 
 describe("the debug view", () => {
   it("is off unless asked for in the address", () => {

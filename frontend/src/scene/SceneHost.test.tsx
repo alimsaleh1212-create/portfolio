@@ -1,8 +1,10 @@
 import { act, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { media, stillsItem } from "../test/fixtures";
 import { answerWithContent, renderApp, stubApi } from "../test/render";
 import { getClimb } from "../climb/climb";
+import { lowerTier, resetTierForTests } from "../tier/tier";
 
 // The 3D code is replaced by a stub that records that it was fetched. WebGL itself is not
 // available in jsdom; what is tested here is when the scene is wanted and what the page does.
@@ -17,13 +19,25 @@ vi.mock("./SceneCanvas", () => {
   };
 });
 
+/** A device that can draw: WebGL 2 on a named GPU, with memory and cores to spare. */
 function allowWebGl(yes: boolean) {
   vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(((
     kind: string,
   ) =>
     yes && kind.startsWith("webgl")
-      ? { getExtension: () => null }
+      ? {
+          getExtension: (name: string) =>
+            name === "WEBGL_debug_renderer_info"
+              ? { UNMASKED_RENDERER_WEBGL: 1 }
+              : null,
+          getParameter: () => "NVIDIA GeForce RTX 3060",
+        }
       : null) as never);
+  vi.stubGlobal("navigator", {
+    ...window.navigator,
+    deviceMemory: 8,
+    hardwareConcurrency: 8,
+  });
 }
 
 function reducedMotion(yes: boolean) {
@@ -36,6 +50,7 @@ function reducedMotion(yes: boolean) {
 }
 
 beforeEach(() => {
+  resetTierForTests();
   loaded.mockClear();
   vi.resetModules();
   window.history.replaceState(null, "", "/");
@@ -44,6 +59,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   document.documentElement.removeAttribute("data-scene");
+  document.documentElement.removeAttribute("data-tier");
 });
 
 async function openClimb() {
@@ -66,15 +82,10 @@ describe("the page without the scene", () => {
     ).toBeInTheDocument();
     expect(document.querySelector("canvas")).toBeNull();
     expect(screen.queryByTestId("scene")).toBeNull();
-    expect(document.documentElement.hasAttribute("data-scene")).toBe(false);
+    // The still tier's backdrop stands where the canvas would have been.
+    expect(document.documentElement.dataset.tier).toBe("still");
+    expect(screen.getByTestId("still-backdrop")).toBeInTheDocument();
     expect(loaded).not.toHaveBeenCalled();
-  });
-
-  it("keeps the page's own ridgelines and Summit peak where no canvas mounts", async () => {
-    allowWebGl(false);
-    await openClimb();
-    expect(document.querySelector(".ridgeline-far")).not.toBeNull();
-    expect(document.querySelector(".peak")).not.toBeNull();
   });
 
   it("mounts no canvas, and does not fetch the 3D code, where reduced motion is requested", async () => {
@@ -84,7 +95,7 @@ describe("the page without the scene", () => {
     await act(() => new Promise((resolve) => setTimeout(resolve, 400)));
     expect(document.querySelector("canvas")).toBeNull();
     expect(loaded).not.toHaveBeenCalled();
-    expect(document.documentElement.hasAttribute("data-scene")).toBe(false);
+    expect(document.documentElement.dataset.tier).toBe("still");
   });
 });
 
@@ -124,5 +135,86 @@ describe("the page with the scene", () => {
     view.unmount();
     expect(document.querySelector("canvas")).toBeNull();
     expect(document.documentElement.hasAttribute("data-scene")).toBe(false);
+  });
+});
+
+async function openClimbWithStills() {
+  stubApi((path) => answerWithContent(path, [...media, stillsItem]));
+  const view = renderApp("/");
+  await screen.findByRole("heading", { level: 1, name: "Ali Saleh" });
+  return view;
+}
+
+describe("the still tier", () => {
+  it("shows the opening picture behind the text and fetches no 3D code, even where WebGL works", async () => {
+    allowWebGl(true);
+    reducedMotion(false);
+    window.history.replaceState(null, "", "/?tier=still");
+    await openClimbWithStills();
+    await act(() => new Promise((resolve) => setTimeout(resolve, 400)));
+    expect(document.querySelector("canvas")).toBeNull();
+    expect(screen.queryByTestId("scene")).toBeNull();
+    expect(loaded).not.toHaveBeenCalled();
+    const backdrop = screen.getByTestId("still-backdrop");
+    expect(backdrop).toHaveAttribute("aria-hidden", "true");
+    expect(backdrop.className).toContain("fixed");
+    expect(document.documentElement.dataset.scene).toBe("on");
+    const first = backdrop.querySelector('[data-still="opening"] img');
+    expect(first).toHaveAttribute("loading", "eager");
+    expect(first).toHaveAttribute("width");
+    expect(first).toHaveAttribute("height");
+    // The pictures further up are not asked for until the Visitor is near them.
+    expect(backdrop.querySelector('[data-still="summit"] img')).toBeNull();
+    expect(backdrop.querySelector('[data-still="ridge"] img')).toBeNull();
+  });
+
+  it("keeps the page's own sky where there are no pictures", async () => {
+    allowWebGl(true);
+    reducedMotion(false);
+    window.history.replaceState(null, "", "/?tier=still");
+    await openClimb();
+    const layer = screen
+      .getByTestId("still-backdrop")
+      .querySelector('[data-still="steep-switch"]');
+    expect(layer?.className).toContain("bg-stage-steep-switch");
+    expect(document.querySelectorAll("[data-still] img")).toHaveLength(0);
+  });
+
+  it("is what a device that cannot draw is served, with all the text", async () => {
+    allowWebGl(false);
+    await openClimbWithStills();
+    expect(document.documentElement.dataset.tier).toBe("still");
+    expect(
+      screen.getAllByRole("heading", { level: 2 }).length,
+    ).toBeGreaterThanOrEqual(5);
+  });
+
+  it("takes over when the full tier loses its context, and the scene goes", async () => {
+    allowWebGl(true);
+    reducedMotion(false);
+    window.history.replaceState(null, "", "/?tier=full");
+    await openClimbWithStills();
+    await screen.findByTestId("scene");
+    act(() => {
+      lowerTier("still");
+    });
+    await waitFor(() => expect(screen.queryByTestId("scene")).toBeNull());
+    expect(screen.getByTestId("still-backdrop")).toBeInTheDocument();
+    expect(document.documentElement.dataset.scene).toBe("on");
+  });
+});
+
+describe("the light tier", () => {
+  it("draws the same scene, and a drop from full to light keeps the canvas", async () => {
+    allowWebGl(true);
+    reducedMotion(false);
+    window.history.replaceState(null, "", "/?tier=full");
+    await openClimbWithStills();
+    const canvas = await screen.findByTestId("stub-canvas");
+    act(() => {
+      lowerTier("light");
+    });
+    expect(screen.getByTestId("stub-canvas")).toBe(canvas);
+    expect(screen.queryByTestId("still-backdrop")).toBeNull();
   });
 });

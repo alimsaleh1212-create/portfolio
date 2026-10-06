@@ -10,15 +10,37 @@ import { DebugReadout } from "./DebugReadout";
 import { Hiker } from "./hiker";
 import { contentOver } from "./occlusion";
 import { hikerModelUrl, loadHikerModel } from "./hikerModel";
-import { createParts } from "./parts";
-import { readSceneColors } from "./palette";
+import { partsSteps } from "./parts";
+import { readSceneColors, type SceneColors } from "./palette";
+import { MOUNTAIN_SEED } from "./landform";
+import { createSlowWatch } from "./frameWatch";
+import { QUALITY, type Quality } from "./quality";
+import { drainAsync } from "./steps";
 import { watchVisibility } from "./visibility";
 import { getClimbScene } from "./registry";
-import { createWorld } from "./world";
+import { worldSteps } from "./world";
 
-const MAX_PIXEL_RATIO = 1.5;
+/** The mountain, built in slices so the page stays responsive, and how long the longest slice held it. */
+async function buildMountain(quality: Quality, colors: SceneColors) {
+  const world = await drainAsync(worldSteps(MOUNTAIN_SEED, quality));
+  const parts = await drainAsync(partsSteps(world.value, colors, quality));
+  return {
+    world: world.value,
+    parts: parts.value,
+    longestSliceMs: Math.max(world.longestSliceMs, parts.longestSliceMs),
+  };
+}
+
+interface Built {
+  controller: SceneController;
+  colors: SceneColors;
+}
 
 interface Props {
+  /** The tier being drawn. Changing it from full to light swaps the mountain's detail in place. */
+  quality: Quality;
+  /** Called when full-tier frames have stayed slow while the Visitor scrolls. */
+  onSlow: () => void;
   /** Show the frames per second, triangles and draw calls; draw every frame so they mean something. */
   debug: boolean;
   /** Called after the first frame has been drawn. */
@@ -31,6 +53,8 @@ interface Props {
 
 /** The canvas, and everything in it. This module and what it imports are the scene's own download. */
 export default function SceneCanvas({
+  quality,
+  onSlow,
   debug,
   onDrawn,
   onLost,
@@ -49,11 +73,49 @@ export default function SceneCanvas({
     },
     [queryClient],
   );
+  const [built, setBuilt] = useState<Built | null>(null);
+  const [drawn, setDrawn] = useState(false);
+  const onDrawnRef = useRef(onDrawn);
+  useEffect(() => {
+    onDrawnRef.current = onDrawn;
+  });
+
+  // Build the mountain in slices (the page stays responsive), then make the canvas. The ground,
+  // the light and the camera are the same in every tier; the quality only sets the detail.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const colors = readSceneColors();
+      const { world, parts } = await buildMountain(quality, colors);
+      if (cancelled) {
+        parts.dispose();
+        return;
+      }
+      const controller = new SceneController({
+        world,
+        colors,
+        parts,
+        onDrawn: () => {
+          onDrawnRef.current();
+          setDrawn(true);
+        },
+        pinned,
+      });
+      setBuilt({ controller, colors });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Built once for this canvas; a later change of quality is a swap, below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!built) return null;
   return (
     <>
       <Canvas
         frameloop={debug ? "always" : "demand"}
-        dpr={[1, MAX_PIXEL_RATIO]}
+        dpr={[1, QUALITY[quality].maxPixelRatio]}
         flat
         gl={{
           antialias: true,
@@ -68,9 +130,11 @@ export default function SceneCanvas({
         }}
       >
         <Mountain
+          built={built}
+          drawn={drawn}
+          quality={quality}
+          onSlow={onSlow}
           debug={debug}
-          pinned={pinned}
-          onDrawn={onDrawn}
           readout={readout}
           findModel={findModel}
         />
@@ -80,42 +144,55 @@ export default function SceneCanvas({
   );
 }
 
-/** Builds the mountain from the seed and the page's colour tokens, and drives it from the Climb. */
+/** Drives the built mountain from the Climb: camera, light, the Hiker, and the swap to light. */
 function Mountain({
+  built,
+  drawn,
+  quality,
+  onSlow,
   debug,
-  pinned,
-  onDrawn,
   readout,
   findModel,
 }: {
+  built: Built;
+  drawn: boolean;
+  quality: Quality;
+  onSlow: () => void;
   debug: boolean;
-  pinned: number | null;
-  onDrawn: () => void;
   readout: React.RefObject<HTMLPreElement | null>;
   findModel: () => Promise<string | null>;
 }) {
   const { scene, size, gl, invalidate, setFrameloop } = useThree();
+  const dpr = useThree((state) => state.viewport.dpr);
   const store = useStore();
-  const [drawn, setDrawn] = useState(false);
-  const built = useMemo(() => {
-    const colors = readSceneColors();
-    const world = createWorld();
-    const parts = createParts(world, colors);
-    const controller = new SceneController({
-      world,
-      colors,
-      parts,
-      onDrawn: () => {
-        onDrawn();
-        setDrawn(true);
-      },
-      pinned,
-    });
-    return { controller, colors };
-    // The scene is built once for this canvas; its props are fixed for its life.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const { controller, colors } = built;
+  const builtQuality = useRef<Quality>(quality);
+  const watch = useMemo(() => createSlowWatch(), []);
+  const wasSettling = useRef(false);
+  const onSlowRef = useRef(onSlow);
+  useEffect(() => {
+    onSlowRef.current = onSlow;
+  });
+
+  // A lighter tier while running: build the cheaper ground in slices, then swap it in. The
+  // camera, the light and the Hiker carry on untouched, so nothing in the picture jumps.
+  useEffect(() => {
+    if (builtQuality.current === quality) return;
+    let cancelled = false;
+    void (async () => {
+      const { world, parts } = await buildMountain(quality, colors);
+      if (cancelled) {
+        parts.dispose();
+        return;
+      }
+      builtQuality.current = quality;
+      controller.swap(world, parts);
+      invalidate();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [quality, controller, colors, invalidate]);
 
   // Put the objects in the scene, and take them out and free them when the page is left.
   useEffect(() => controller.mount(scene), [scene, controller]);
@@ -173,7 +250,7 @@ function Mountain({
   useEffect(() => {
     controller.setPixelRatio(gl.getPixelRatio());
     invalidate();
-  }, [controller, gl, size, invalidate]);
+  }, [controller, gl, size, dpr, invalidate]);
 
   // Page content over the Hiker makes it step aside. The scene itself never reads the page: this
   // is the one place that asks what is on screen at a point.
@@ -189,6 +266,7 @@ function Mountain({
     const hook = window as unknown as {
       setScenePose?: (values: number[] | null) => void;
       probeHiker?: () => unknown;
+      simulateFrames?: (frameMs: number, count: number) => void;
     };
     hook.probeHiker = () => {
       const { camera, size } = store.getState();
@@ -199,6 +277,16 @@ function Mountain({
         calls: info.calls,
       };
     };
+    // Tests feed frame times by hand, so a slow run needs no slow machine and no clock. In the
+    // debug view the real frames are not watched, only these.
+    hook.simulateFrames = (frameMs, count) => {
+      for (let i = 0; i < count; i++) {
+        if (watch.push(frameMs, true)) {
+          onSlowRef.current();
+          return;
+        }
+      }
+    };
     hook.setScenePose = (values) => {
       controller.setManualPose(values);
       invalidate();
@@ -207,8 +295,9 @@ function Mountain({
       controller.setReadout(null);
       delete hook.setScenePose;
       delete hook.probeHiker;
+      delete hook.simulateFrames;
     };
-  }, [debug, controller, readout, invalidate, store, gl]);
+  }, [debug, controller, readout, invalidate, store, gl, watch]);
 
   useFrame((state, delta) => {
     controller.frame(
@@ -217,6 +306,11 @@ function Mountain({
       state.gl,
       delta,
     );
+    // Frames that follow one another while the camera eases are what show how the device copes.
+    if (!debug && quality === "full") {
+      if (watch.push(delta * 1000, wasSettling.current)) onSlowRef.current();
+    }
+    wasSettling.current = controller.settling;
     // Ask for another frame only while the camera is still easing toward the page.
     if (controller.settling) state.invalidate();
   });

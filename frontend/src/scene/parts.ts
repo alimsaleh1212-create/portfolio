@@ -27,24 +27,51 @@ import {
   buildPineGeometry,
   buildRangeGeometry,
   buildStarGeometry,
-  buildTerrainGeometry,
   buildTrailGeometry,
   campSite,
-  planTrees,
+  type TreePlan,
   SNOW_LINE,
+  terrainGeometrySteps,
+  treePlanSteps,
 } from "./meshes";
 import type { SceneColors } from "./palette";
+import { QUALITY, type Quality } from "./quality";
+import { drain } from "./steps";
 import type { World } from "./world";
 
 /** Everything drawn, built once from the world and the palette. */
 export type Parts = ReturnType<typeof createParts>;
+
+/** Keeps every n-th tree, so the light tier's forest is the same forest, thinner. */
+function thinned(plan: TreePlan, every: number): TreePlan {
+  if (every <= 1) return plan;
+  const kept: number[] = [];
+  for (let i = 0; i < plan.count; i += every) {
+    kept.push(...Array.from(plan.data.subarray(i * 6, i * 6 + 6)));
+  }
+  return { data: new Float32Array(kept), count: kept.length / 6 };
+}
 
 /**
  * The scene's objects: sky and stars, the far ranges, the ground, the trail, the pines,
  * High Camp and its lantern, and the lamps. Six or seven draw calls in all. `dispose`
  * frees every geometry and material, so leaving the page leaks nothing.
  */
-export function createParts(world: World, colors: SceneColors) {
+export function createParts(
+  world: World,
+  colors: SceneColors,
+  quality: Quality = "full",
+) {
+  return drain(partsSteps(world, colors, quality));
+}
+
+/** `createParts` as pausable work, so the build does not freeze the page (see `steps.ts`). */
+export function* partsSteps(
+  world: World,
+  colors: SceneColors,
+  quality: Quality = "full",
+) {
+  const settings = QUALITY[quality];
   const atmosphere = createAtmosphere(world.landform.summit.y, SNOW_LINE);
 
   const sky = new Mesh(new SphereGeometry(500, 24, 12), createSkyMaterial());
@@ -52,7 +79,7 @@ export function createParts(world: World, colors: SceneColors) {
   sky.renderOrder = -20;
 
   const starMaterial = createStarMaterial();
-  const stars = new Points(buildStarGeometry(), starMaterial);
+  const stars = new Points(buildStarGeometry(settings.stars), starMaterial);
   stars.frustumCulled = false;
   stars.renderOrder = -10;
 
@@ -64,8 +91,9 @@ export function createParts(world: World, colors: SceneColors) {
     shade: true,
     summit: true,
   });
+  yield;
   const terrain = new Mesh(
-    buildTerrainGeometry(world.terrain, colors),
+    yield* terrainGeometrySteps(world.terrain, colors),
     terrainMaterial,
   );
   terrain.frustumCulled = false;
@@ -80,7 +108,9 @@ export function createParts(world: World, colors: SceneColors) {
   const trail = new Mesh(buildTrailGeometry(world), trailMaterial);
   trail.frustumCulled = false;
 
-  const plan = planTrees(world);
+  yield;
+  const full = yield* treePlanSteps(world);
+  const plan = thinned(full, settings.pineEvery);
   const pine = buildPineGeometry();
   const treeMaterial = createLitMaterial(atmosphere, { vertexColors: false });
   const trees = new InstancedMesh(pine, treeMaterial, Math.max(1, plan.count));
