@@ -14,6 +14,8 @@ from collections.abc import Sequence
 from pathlib import Path
 
 import structlog
+from prometheus_client import CollectorRegistry
+from redis.exceptions import RedisError
 
 from app.config import Settings, get_settings
 from app.content.loader import (
@@ -22,13 +24,16 @@ from app.content.loader import (
     find_placeholders,
     load_content,
 )
+from app.data.cache import create_redis
 from app.data.content_repo import ContentRepository
 from app.data.db import create_engine, create_session_factory
 from app.data.media_repo import MediaRepository
+from app.data.response_cache import ResponseCache
 from app.data.storage import MediaStore, create_s3_client
 from app.logging import configure_logging
 from app.media.manifest import load_manifest
 from app.media.pipeline import MediaPipeline, find_missing
+from app.metrics import CacheMetrics
 
 logger = structlog.get_logger(__name__)
 
@@ -101,6 +106,40 @@ async def seed_media(settings: Settings, *, strict: bool) -> None:
         s3.close()
 
 
+class CacheInvalidationError(Exception):
+    """The response cache could not be invalidated after the seed."""
+
+
+async def invalidate_cache(settings: Settings) -> None:
+    """Invalidate the API's response cache, so the next request reads Postgres.
+
+    Called after each step has committed. It must succeed: an API that kept
+    serving the old entries would show content the database no longer holds.
+
+    Raises:
+        CacheInvalidationError: Redis could not be reached or refused.
+    """
+    redis = create_redis(settings.redis_url, CONNECT_TIMEOUT_SECONDS)
+    cache = ResponseCache(
+        redis,
+        CacheMetrics(CollectorRegistry()),
+        ttl_seconds=settings.cache_ttl_seconds,
+        timeout_seconds=CONNECT_TIMEOUT_SECONDS,
+        retry_seconds=0,
+    )
+    try:
+        await cache.invalidate()
+    except (RedisError, OSError) as exc:
+        raise CacheInvalidationError(
+            "the content is loaded but the API's response cache could not be "
+            f"invalidated ({type(exc).__name__}). Run the seed again once Redis "
+            "is back, or the API may serve old content."
+        ) from None
+    finally:
+        await redis.aclose()
+    logger.info("cache_invalidated")
+
+
 def strict_problems(settings: Settings) -> list[str]:
     """List what strict mode refuses: remaining placeholders and missing media."""
     problems: list[str] = []
@@ -128,7 +167,13 @@ async def run_seed(settings: Settings, *, strict: bool) -> None:
         if problems:
             raise ContentError("\n".join(problems))
     await seed_content(Path(settings.content_dir), settings.database_url, strict=strict)
-    await seed_media(settings, strict=strict)
+    # Each step is invalidated once it has committed, never before: a reader
+    # that started after an early invalidation could store old rows as current.
+    await invalidate_cache(settings)
+    try:
+        await seed_media(settings, strict=strict)
+    finally:
+        await invalidate_cache(settings)
 
 
 def main(argv: Sequence[str] | None = None, settings: Settings | None = None) -> int:
@@ -156,7 +201,7 @@ def main(argv: Sequence[str] | None = None, settings: Settings | None = None) ->
     configure_logging(settings.log_level)
     try:
         asyncio.run(run_seed(settings, strict=args.strict))
-    except ContentError as exc:
+    except (ContentError, CacheInvalidationError) as exc:
         sys.stderr.write(f"seed failed:\n{exc}\n")
         return 1
     return 0
