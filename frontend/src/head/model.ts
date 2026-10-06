@@ -60,7 +60,7 @@ function role(headline: string): string {
 
 /** Absolute address of a path on the site. */
 export function absolute(siteUrl: string, path: string): string {
-  return `${siteUrl.replace(/\/+$/, "")}${path === "/" ? "" : path}` || "/";
+  return `${siteUrl.replace(/\/+$/, "")}${path}`;
 }
 
 /**

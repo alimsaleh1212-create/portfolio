@@ -10,6 +10,13 @@ export const DESCRIPTION_MAX = 160;
 
 const ELLIPSIS = "\u2026";
 
+/** Words a description should not end on when it stops mid-sentence ("... backed by" or "... with"). */
+const DANGLING = new Set(
+  "a an the and or but of to for in on at by with from as into over under per via than that which who whose is are was were be".split(
+    " ",
+  ),
+);
+
 /** Remove tags, Markdown marks and entities' worth of noise, and collapse whitespace. */
 export function plainText(text: string): string {
   return text
@@ -52,5 +59,9 @@ export function describe(parts: string[], max = DESCRIPTION_MAX): string {
     const space = cut.lastIndexOf(" ");
     if (space > 0) cut = cut.slice(0, space);
   }
-  return `${cut.replace(/[\s,;:\u2013\u2014-]+$/, "")}${ELLIPSIS}`;
+  const words = cut.replace(/[\s,;:\u2013\u2014-]+$/, "").split(" ");
+  while (words.length > 1 && DANGLING.has(words.at(-1)!.toLowerCase())) {
+    words.pop();
+  }
+  return `${words.join(" ").replace(/[\s,;:\u2013\u2014-]+$/, "")}${ELLIPSIS}`;
 }

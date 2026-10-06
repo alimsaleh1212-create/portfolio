@@ -50,7 +50,7 @@ describe("sitemap.xml", () => {
       (match) => match[1],
     );
     expect(locations).toEqual([
-      "https://ali.example",
+      "https://ali.example/",
       "https://ali.example/summary",
       ...projects.map(
         (project) => `https://ali.example/projects/${project.slug}`,

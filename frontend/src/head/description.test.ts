@@ -43,6 +43,14 @@ suite("describe", () => {
     }
   });
 
+  it("does not end on a word that needs the next one", () => {
+    const text = describe(
+      ["I built agents that work together with other tools"],
+      36,
+    );
+    expect(text).toBe("I built agents that work together\u2026");
+  });
+
   it("ends with an ellipsis when it stops mid-sentence, and with a full stop at a sentence", () => {
     const cut = describe([LONG], 80);
     expect(cut.endsWith("…")).toBe(true);

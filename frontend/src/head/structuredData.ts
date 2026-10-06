@@ -11,7 +11,7 @@ export function personData(profile: Profile, siteUrl: string): object {
     "@type": "Person",
     name: profile.name,
     jobTitle: profile.headline,
-    url: siteUrl,
+    url: `${siteUrl.replace(/\/+$/, "")}/`,
     email: `mailto:${profile.links.email}`,
     sameAs: [profile.links.linkedin, profile.links.github],
   };

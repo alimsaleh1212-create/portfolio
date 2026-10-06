@@ -44,7 +44,7 @@ describe("the landing page's head", () => {
   });
 
   it("names its canonical address, which is the site's own", () => {
-    expect(head.canonical).toBe(SITE);
+    expect(head.canonical).toBe(`${SITE}/`);
   });
 
   it("previews with the opening view at the size link previews expect", () => {
@@ -59,7 +59,7 @@ describe("the landing page's head", () => {
   it("has Open Graph and Twitter card tags", () => {
     expect(content(head, "og:title")).toBe(head.title);
     expect(content(head, "og:description")).toBe(head.description);
-    expect(content(head, "og:url")).toBe(SITE);
+    expect(content(head, "og:url")).toBe(`${SITE}/`);
     expect(content(head, "og:image")).toBe(head.image!.url);
     expect(content(head, "og:image:width")).toBe("1200");
     expect(content(head, "og:image:height")).toBe("630");
@@ -76,7 +76,7 @@ describe("the landing page's head", () => {
       "@type": "Person",
       name: "Ali Saleh",
       jobTitle: profile.headline,
-      url: SITE,
+      url: `${SITE}/`,
       email: `mailto:${profile.links.email}`,
       sameAs: [profile.links.linkedin, profile.links.github],
     });
