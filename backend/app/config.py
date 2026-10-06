@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # Port of the metrics endpoint (`/metrics`), served apart from the API so
     # Caddy never proxies it. 0 turns it off.
     metrics_port: int = 9100
+    # Base URL of an OTLP/HTTP receiver (the standard variable name). Traces are
+    # exported only when it is set; with it unset nothing tries to connect.
+    otel_exporter_otlp_endpoint: str | None = None
     # Folder holding profile.yaml, stages.yaml and projects.yaml.
     content_dir: Path = Path("/content")
     # Folder holding the source photograph, video and PDF, mounted read-only.

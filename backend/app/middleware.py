@@ -2,6 +2,7 @@
 
 import re
 import time
+import traceback
 import uuid
 
 import structlog
@@ -72,12 +73,22 @@ class RequestIdMiddleware:
 
         try:
             await self.app(scope, receive, send_with_request_id)
-        except Exception:
-            logger.exception(
-                "request_failed", method=scope["method"], path=scope["path"]
+        except Exception as exc:
+            # Never the exception's text: a database error's message carries the
+            # statement's parameters (a Visitor hash, a contact message). The
+            # class and the places in the code are enough to find the fault.
+            logger.error(
+                "request_failed",
+                method=scope["method"],
+                path=scope["path"],
+                error_type=type(exc).__name__,
+                frames=[
+                    f"{frame.filename}:{frame.lineno} in {frame.name}"
+                    for frame in traceback.extract_tb(exc.__traceback__)
+                ],
             )
             if response_started:
-                raise
+                raise RuntimeError(type(exc).__name__) from None
             status_code = 500
             error_response = JSONResponse(
                 {"detail": "Internal server error."},

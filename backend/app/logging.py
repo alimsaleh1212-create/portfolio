@@ -10,6 +10,8 @@ from typing import TextIO
 
 import structlog
 
+from app.telemetry import add_trace_ids
+
 _UVICORN_LOGGERS = ("uvicorn", "uvicorn.error", "uvicorn.access")
 
 
@@ -38,6 +40,7 @@ def configure_logging(level: str = "INFO") -> None:
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_log_level,
         structlog.stdlib.add_logger_name,
+        add_trace_ids,
         structlog.processors.TimeStamper(fmt="iso", utc=True),
     ]
 

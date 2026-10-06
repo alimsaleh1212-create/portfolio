@@ -1,0 +1,7 @@
+# Loki and Tempo ship distroless images with no shell, wget or curl, so Compose
+# cannot health-check them. This adds one static busybox binary (for its wget)
+# on top of the pinned image and changes nothing else.
+ARG BASE
+FROM busybox:1.37.0-musl AS busybox
+FROM ${BASE}
+COPY --from=busybox /bin/busybox /busybox
