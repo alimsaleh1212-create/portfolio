@@ -36,3 +36,7 @@ npm-debug.log*
 .vscode/
 *.swp
 .DS_Store
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/
