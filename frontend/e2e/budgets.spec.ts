@@ -90,12 +90,10 @@ for (const tier of ["still", "full"] as const) {
     await expect(page.locator("#climb-title")).toBeInViewport();
     await expect.poll(async () => (await readings(page)).fcp).not.toBeNull();
     const first = await readings(page);
-    test
-      .info()
-      .annotations.push({
-        type: "measured",
-        description: `fcp ${Math.round(first.fcp!)} ms, lcp ${Math.round(first.lcp!.time)} ms (${first.lcp!.tag})`,
-      });
+    test.info().annotations.push({
+      type: "measured",
+      description: `fcp ${Math.round(first.fcp!)} ms, lcp ${Math.round(first.lcp!.time)} ms (${first.lcp!.tag})`,
+    });
     expect(first.fcp!).toBeLessThan(TEXT_BUDGET);
     expect(first.lcp).not.toBeNull();
     // The largest thing painted by then is text, not a picture that arrived late.
@@ -108,12 +106,10 @@ for (const tier of ["still", "full"] as const) {
     await page.evaluate(() => document.fonts.ready);
     await nextFrames(page);
     const after = await readings(page);
-    test
-      .info()
-      .annotations.push({
-        type: "layout shift",
-        description: String(after.cls),
-      });
+    test.info().annotations.push({
+      type: "layout shift",
+      description: String(after.cls),
+    });
     expect(after.cls).toBeLessThan(SHIFT_BUDGET);
     // The scene arriving must not have moved the text either.
     expect(after.lcp!.isText).toBe(true);

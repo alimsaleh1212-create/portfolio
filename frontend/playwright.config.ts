@@ -12,7 +12,9 @@ import { existsSync } from "node:fs";
  * it exists) instead of downloading Playwright's own browser (`npx playwright install
  * chromium`). Tests never depend on real frame timing.
  *
- * Ticket #19 adds the Climb's own tests; add files here as `e2e/*.spec.ts`.
+ * Files run in parallel with each other (WORKERS, default 3: Chrome's software WebGL uses the
+ * processor hard, so more workers slow every test); the tests in one file run in order.
+ * Tests that start a real Visit are tagged `@visit` (see e2e/support.ts).
  */
 const local = process.env.CHROME_PATH ?? "/usr/bin/google-chrome";
 const executablePath =
@@ -25,7 +27,7 @@ export default defineConfig({
   timeout: 120_000,
   expect: { timeout: 60_000 },
   fullyParallel: false,
-  workers: 1,
+  workers: Number(process.env.WORKERS ?? 3),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {

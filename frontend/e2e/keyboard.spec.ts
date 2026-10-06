@@ -41,7 +41,9 @@ async function tabTo(
     if (await done()) return;
     await page.keyboard.press("Tab");
   }
-  throw new Error(`Tab never reached ${what}`);
+  throw new Error(
+    `Tab never reached ${what} (at ${page.url()}, focus on ${await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 120))})`,
+  );
 }
 
 /** The page has stopped scrolling: the same position over two frames. */
@@ -145,6 +147,8 @@ for (const { tier, size } of cases) {
       );
       await page.keyboard.press("Enter");
       await expect(page).toHaveURL(/\/projects\//);
+      // The Climb has gone and the Project is drawn (the address changes a moment before the page).
+      await expect(page.locator("#climb-title")).toHaveCount(0);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       // The Project page's own way back is a link, reached and used with the keyboard too.
       await tabTo(

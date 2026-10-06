@@ -61,6 +61,8 @@ for (const tier of TIERS) {
               const slug = (await tile.getAttribute("href"))!;
               await tile.click();
               await expect(page).toHaveURL(new RegExp(`${slug}$`));
+              // The Climb has gone and the Project is drawn (the address changes a moment before the page).
+              await expect(page.locator("#climb-title")).toHaveCount(0);
               await expect(
                 page.getByRole("heading", { level: 1 }),
               ).toBeVisible();
