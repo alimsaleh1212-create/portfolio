@@ -429,6 +429,28 @@ describe("rate limited", () => {
   });
 });
 
+describe("unsent text", () => {
+  const leave = () => {
+    const event = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  };
+
+  it("asks before the page is left only while something is typed and unsent", async () => {
+    stubServer(created);
+    const user = userEvent.setup();
+    render(<ContactSection links={profile.links} />);
+    expect(leave()).toBe(false);
+
+    await fill(user);
+    expect(leave()).toBe(true);
+
+    await send(user);
+    await screen.findByText("Message sent");
+    expect(leave()).toBe(false);
+  });
+});
+
 describe("what the form keeps", () => {
   it("writes nothing to cookies or storage", async () => {
     stubServer(created);

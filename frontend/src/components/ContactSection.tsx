@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
 import {
   sendMessage,
@@ -43,6 +43,15 @@ export function ContactSection({
   const [status, setStatus] = useState<Status>("ready");
   const fields = useRef<Partial<Record<ContactField, HTMLElement | null>>>({});
   const confirmation = useRef<HTMLDivElement>(null);
+
+  // Leaving with a message half written loses it, so the browser asks first.
+  const unsent = status !== "sent" && Object.values(values).some((v) => v);
+  useEffect(() => {
+    if (!unsent) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [unsent]);
 
   const focusFirstError = (found: FieldErrors) => {
     const first = FIELD_ORDER.find((field) => found[field]);
@@ -131,7 +140,7 @@ export function ContactSection({
         <button
           type="button"
           onClick={() => setStatus("ready")}
-          className="link press mt-4 text-sm"
+          className="link press mt-2 py-2 text-sm"
         >
           Send another message
         </button>
@@ -271,7 +280,7 @@ export function ContactSection({
         <h3 className="text-ink-muted text-sm font-medium">
           Or reach me directly
         </h3>
-        <ul className="mt-3 flex flex-wrap gap-x-8 gap-y-3">
+        <ul className="mt-3 space-y-3">
           <DirectLink label="Email" href={mailto} text={links.email} />
           <DirectLink
             label="LinkedIn"
