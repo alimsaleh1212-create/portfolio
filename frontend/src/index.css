@@ -348,6 +348,7 @@
   :root {
     --duration-fast: 0.01ms;
     --duration-base: 0.01ms;
+    --duration-scene: 0.01ms;
     --scale-press: 1;
   }
   * {

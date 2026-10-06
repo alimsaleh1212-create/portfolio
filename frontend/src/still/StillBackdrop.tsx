@@ -65,7 +65,7 @@ export function StillBackdrop({ media }: { media: MediaItem[] }) {
     <div
       aria-hidden="true"
       data-testid="still-backdrop"
-      className="scene-layer pointer-events-none fixed inset-0 -z-10"
+      className="pointer-events-none fixed inset-0 -z-10"
     >
       {STILL_POSITIONS.map((position, k) => (
         <div
