@@ -154,8 +154,10 @@ describe("the camera", () => {
     expect(Math.sign(shifts[4])).toBe(-1);
   });
 
-  it("does not shift sideways on narrow screens, where the text runs across", () => {
-    for (let u = 0; u <= 6; u++) expect(poseAt(u, true).shift.x).toBe(0);
+  it("shifts only slightly sideways on narrow screens, where the text runs across", () => {
+    // Only to put the Hiker out of frame at a Stage where text fills the width (see CLAUDE.md).
+    for (let u = 0; u <= 6; u++)
+      expect(Math.abs(poseAt(u, true).shift.x)).toBeLessThanOrEqual(0.35);
   });
 
   it("climbs: each Stage's camera is higher than the one before", () => {

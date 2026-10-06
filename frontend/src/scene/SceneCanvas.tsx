@@ -8,6 +8,7 @@ import { subscribeClimb } from "../climb/climb";
 import { SceneController } from "./controller";
 import { DebugReadout } from "./DebugReadout";
 import { Hiker } from "./hiker";
+import { contentOver } from "./occlusion";
 import { hikerModelUrl, loadHikerModel } from "./hikerModel";
 import { createParts } from "./parts";
 import { readSceneColors } from "./palette";
@@ -173,6 +174,13 @@ function Mountain({
     controller.setPixelRatio(gl.getPixelRatio());
     invalidate();
   }, [controller, gl, size, invalidate]);
+
+  // Page content over the Hiker makes it step aside. The scene itself never reads the page: this
+  // is the one place that asks what is on screen at a point.
+  useEffect(() => {
+    controller.setOccluder(contentOver);
+    return () => controller.setOccluder(null);
+  }, [controller]);
 
   // Debug only: the readout, and a hook to try a camera pose without a reload.
   useEffect(() => {

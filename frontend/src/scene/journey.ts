@@ -144,7 +144,7 @@ export const POSE_KEYS: PoseKey[] = [
     target: [-6, 58, -90],
     fov: 50,
     wide: [-0.22, 0],
-    narrow: [0, -0.1],
+    narrow: [-0.16, -0.1],
   },
   {
     position: [6.9, 20.1, 7.5],
@@ -154,18 +154,18 @@ export const POSE_KEYS: PoseKey[] = [
     narrow: [0, -0.04],
   },
   {
-    position: [-10.8, 26.5, -11],
+    position: [35.7, 25.3, -28.5],
     target: [8, 78, -112],
     fov: 58,
     wide: [0.14, -0.04],
     narrow: [0, 0.1],
   },
   {
-    position: [-5.6, 51.2, -56.6],
+    position: [-3.8, 44.8, -56.4],
     target: [2, 96, -112],
     fov: 52,
     wide: [-0.22, 0.03],
-    narrow: [0, -0.06],
+    narrow: [0.32, -0.06],
   },
   {
     position: [-9.6, 21.3, -26.4],

@@ -30,6 +30,14 @@ import type { World } from "./world";
 /** The page has no side column below this width: the scene is framed for a full-width text block. */
 export const NARROW = 1024;
 
+/** A rectangle on the screen, in CSS pixels. */
+export interface ScreenBox {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
 interface Options {
   world: World;
   colors: SceneColors;
@@ -57,6 +65,8 @@ export class SceneController {
   private listeners = new Set<() => void>();
   private hiker: Hiker | null = null;
   private hikerBusy = false;
+  private covered = false;
+  private occluder: ((box: ScreenBox) => boolean) | null = null;
 
   constructor(private readonly options: Options) {
     this.current = options.pinned ?? journeyAt(getClimb());
@@ -119,6 +129,36 @@ export class SceneController {
       : null;
   }
 
+  /** Give the scene a way to ask whether page content is over a screen box (the page's job, not the scene's). */
+  setOccluder(occluder: ((box: ScreenBox) => boolean) | null) {
+    this.occluder = occluder;
+  }
+
+  /** Where the Hiker is on the screen, as a box a little wider than its body. */
+  private hikerBox(
+    camera: PerspectiveCamera,
+    size: { width: number; height: number },
+  ): ScreenBox {
+    const hiker = this.hiker!;
+    const toScreen = (v: Vector3) => {
+      const p = v.clone().project(camera);
+      return {
+        x: ((p.x + 1) / 2) * size.width,
+        y: ((1 - p.y) / 2) * size.height,
+      };
+    };
+    const feet = hiker.position.clone();
+    const foot = toScreen(feet);
+    const top = toScreen(feet.clone().setY(feet.y + HIKER_HEIGHT));
+    const height = foot.y - top.y;
+    return {
+      left: foot.x - height * 0.3,
+      right: foot.x + height * 0.3,
+      top: top.y,
+      bottom: foot.y,
+    };
+  }
+
   /** Debug: where the Hiker is on the screen and what it is doing, for measuring from the console. */
   probe(camera: PerspectiveCamera, size: { width: number; height: number }) {
     const hiker = this.hiker;
@@ -147,6 +187,7 @@ export class SceneController {
       slip: [hiker.slipRatio(), hiker.slipRatio(true)],
       gap: lowest - world.terrain.heightAt(feet.x, feet.z),
       journey: this.current,
+      visibility: hiker.visibility,
     };
   }
 
@@ -269,7 +310,16 @@ export class SceneController {
         seconds,
         camera,
         stars: light.stars,
+        covered: this.covered,
       });
+      // Is page content over the Hiker now? If that changed, one more frame to fade.
+      if (this.occluder) {
+        const covered = this.occluder(this.hikerBox(camera, size));
+        if (covered !== this.covered) {
+          this.covered = covered;
+          this.hikerBusy = true;
+        }
+      }
     }
 
     if (!this.drawn) {

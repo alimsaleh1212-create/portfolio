@@ -94,9 +94,11 @@ export function phaseAt(gait: Gait, ground: number): number {
   return Math.min(1 - 1e-9, (low + fraction) / samples);
 }
 
-/** The lantern's strength: lit while stars show, gone as the sun comes. `stars` is the light's 0 to 1. */
-export function lanternAmount(stars: number): number {
-  return Math.min(1, Math.max(0, stars * 1.8));
+/** The lantern's strength: lit while stars show, gone as the sun comes, lit again on arrival at camp (`arrival` 0 to 1). */
+export function lanternAmount(stars: number, arrival = 0): number {
+  const night = Math.min(1, Math.max(0, stars * 1.8));
+  // On reaching High Camp the Hiker lights the lantern again, whatever the sky.
+  return Math.max(night, 0.7 * Math.min(1, Math.max(0, arrival)));
 }
 
 /** A bone by name, whether or not the loader stripped the dot from `hand.l`. */
@@ -166,6 +168,8 @@ export interface HikerFrame {
   camera: PerspectiveCamera;
   /** The sky's stars, 0 to 1: the lantern burns while there are stars. */
   stars: number;
+  /** Something on the page (text, a card) is over the Hiker: it steps out of the way. */
+  covered?: boolean;
 }
 
 export class Hiker {
@@ -189,6 +193,9 @@ export class Hiker {
   private distance: number | null = null;
   /** Ground walked so far, in scene units, which the cycle is read from. */
   private travel = 0;
+  /** How visible the Hiker is, 0 (covered by text) to 1. */
+  private shown = 1;
+  private readonly bodyMaterials: Material[] = [];
   private blend = 0;
   private heading = 0;
   private started = false;
@@ -208,6 +215,10 @@ export class Hiker {
     this.object.frustumCulled = false;
     model.traverse((child) => {
       child.frustumCulled = false;
+      const mesh = child as Mesh;
+      if (mesh.isMesh && !Array.isArray(mesh.material))
+        if (!this.bodyMaterials.includes(mesh.material))
+          this.bodyMaterials.push(mesh.material);
     });
 
     this.mixer = new AnimationMixer(model);
@@ -274,6 +285,11 @@ export class Hiker {
     return this.heading;
   }
 
+  /** How visible the Hiker is, 0 (stepped out of the way of text) to 1. */
+  get visibility(): number {
+    return this.shown;
+  }
+
   /** How much of the walk is showing, 0 (standing) to 1 (walking). */
   get walking(): number {
     return this.blend;
@@ -296,7 +312,7 @@ export class Hiker {
    * Move to where the page puts the Hiker. Returns true while the Hiker is still moving,
    * turning or settling, which is when another frame is needed.
    */
-  update({ seconds, camera, stars }: HikerFrame): boolean {
+  update({ seconds, camera, stars, covered = false }: HikerFrame): boolean {
     const { scene } = this.options;
     const dt = seconds > LONGEST_FRAME || seconds <= 0 ? 1 / 60 : seconds;
     const t = scene.trailT();
@@ -346,21 +362,40 @@ export class Hiker {
     this.applyPose(this.blend);
 
     // The lantern burns while the stars show.
-    const amount = lanternAmount(stars);
-    this.lantern.visible = amount > 0.02;
+    const arrival = (t - 0.85) / 0.15;
+    const amount = lanternAmount(
+      stars,
+      arrival * arrival * (3 - 2 * Math.min(1, Math.max(0, arrival))),
+    );
+    // Behind the page's text it fades out, so it never lowers the text's contrast or sits half
+    // hidden behind a card; it comes back as soon as the way is clear.
+    const wanted = covered ? 0 : 1;
+    const fadingVisibility = Math.abs(this.shown - wanted) > 0.01;
+    this.shown = fadingVisibility
+      ? lerp(this.shown, wanted, 1 - Math.exp(-12 * dt))
+      : wanted;
+    if (!this.started) this.shown = wanted;
+    for (const material of this.bodyMaterials) {
+      material.opacity = this.shown;
+      material.transparent = this.shown < 0.999;
+    }
+    this.object.visible = this.shown > 0.01;
+    this.lantern.visible = amount > 0.02 && this.shown > 0.01;
+    this.lanternMaterial.opacity = this.shown;
+    this.lanternMaterial.transparent = true;
     this.object.updateMatrixWorld(true);
     this.lantern.getWorldPosition(this.lanternBox);
-    this.glow.visible = amount > 0.01;
+    this.glow.visible = amount > 0.01 && this.shown > 0.01;
     this.glow.position.copy(this.lanternBox);
     this.glow.quaternion.copy(camera.quaternion);
     this.world.copy(this.lanternBox).sub(camera.position);
     const size = Math.max(4, this.world.length() * 0.11);
     this.glow.scale.setScalar(size);
-    this.glowMaterial.uniforms.uAmount.value = amount * 0.85;
+    this.glowMaterial.uniforms.uAmount.value = amount * 0.85 * this.shown;
     this.lanternMaterial.color.copy(this.options.colors["first-light"]);
 
     this.started = true;
-    return moving || fading || turning;
+    return moving || fading || turning || fadingVisibility;
   }
 
   /**

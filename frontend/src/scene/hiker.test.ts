@@ -65,4 +65,9 @@ describe("the lantern", () => {
     expect(lanternAmount(0.45)).toBeGreaterThan(0.5);
     expect(lanternAmount(0)).toBe(0);
   });
+
+  it("is lit again on arrival at High Camp", () => {
+    expect(lanternAmount(0, 1)).toBeGreaterThan(0.5);
+    expect(lanternAmount(0, 0)).toBe(0);
+  });
 });
