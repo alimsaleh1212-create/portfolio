@@ -210,7 +210,6 @@ services:
       - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=7d
       - --storage.tsdb.retention.size=1GB
-      - --web.enable-lifecycle=false
     environment:
       GOMEMLIMIT: 200MiB
     mem_limit: 256m
@@ -225,7 +224,12 @@ services:
 
   loki:
     profiles: [observability]
-    image: grafana/loki:3.7.8
+    build:
+      context: ./infra/observability
+      dockerfile: Dockerfile.probe
+      args:
+        BASE: grafana/loki:3.7.8
+    image: ali-portfolio-loki:3.7.8
     command: ["-config.file=/etc/loki/loki.yaml"]
     environment:
       GOMEMLIMIT: 250MiB
@@ -234,14 +238,19 @@ services:
       - ./infra/observability/loki/loki.yaml:/etc/loki/loki.yaml:ro
       - loki_data:/loki
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3100/ready"]
+      test: ["CMD", "/busybox", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3100/ready"]
       interval: 5s
       timeout: 3s
       retries: 20
 
   tempo:
     profiles: [observability]
-    image: grafana/tempo:3.1.0
+    build:
+      context: ./infra/observability
+      dockerfile: Dockerfile.probe
+      args:
+        BASE: grafana/tempo:2.10.8
+    image: ali-portfolio-tempo:2.10.8
     command: ["-config.file=/etc/tempo/tempo.yaml"]
     environment:
       GOMEMLIMIT: 250MiB
@@ -250,7 +259,7 @@ services:
       - ./infra/observability/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
       - tempo_data:/var/tempo
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3200/ready"]
+      test: ["CMD", "/busybox", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3200/ready"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -295,7 +304,15 @@ services:
       tempo:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "/bin/alloy", "--version"]
+      # The image has no wget or curl, so speak HTTP through bash.
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/12345 &&
+          printf 'GET /-/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          read -r status <&3 && [[ $$status == *" 200 "* ]]
       interval: 10s
       timeout: 3s
       retries: 5

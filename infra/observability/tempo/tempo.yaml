@@ -1,4 +1,4 @@
-# Single-process Tempo on local disk. Traces are kept for 3 days. Spans arrive
+# Single-process Tempo 2.x on local disk (Tempo 3 needs a Kafka-compatible queue).  Traces are kept for 3 days. Spans arrive
 # from the collector over OTLP gRPC; nothing else is exposed.
 stream_over_http_enabled: true
 

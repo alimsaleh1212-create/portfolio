@@ -61,6 +61,9 @@ def check_compose() -> None:
     for name in added:
         service = on[name]
         image = service.get("image", "")
+        base = service.get("build", {}).get("args", {}).get("BASE")
+        if base:
+            image = base
         tag = image.rsplit(":", 1)[-1] if ":" in image.split("/")[-1] else ""
         if not tag or tag == "latest":
             fail(f"{name}: image {image!r} is not pinned to a version")
