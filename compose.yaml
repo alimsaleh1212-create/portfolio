@@ -82,6 +82,13 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET:-portfolio-media}
       HEALTH_CHECK_TIMEOUT_SECONDS: ${HEALTH_CHECK_TIMEOUT_SECONDS:-2}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Response cache: an expiry that is only a safety net (the seed invalidates),
+      # and the longest a cache read or write may take. Metrics are served on
+      # their own port, unpublished and never proxied by Caddy.
+      CACHE_TTL_SECONDS: ${CACHE_TTL_SECONDS:-3600}
+      CACHE_TIMEOUT_SECONDS: ${CACHE_TIMEOUT_SECONDS:-0.25}
+      CACHE_RETRY_SECONDS: ${CACHE_RETRY_SECONDS:-5}
+      METRICS_PORT: ${METRICS_PORT:-9100}
       # Contact message delivery by email. Off unless SMTP_HOST, MAIL_SENDER and
       # MAIL_RECIPIENT are all set (see .env.example).
       SMTP_HOST: ${SMTP_HOST:-}
@@ -121,6 +128,9 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      # The seed invalidates the API's response cache in Redis when it finishes.
+      redis:
+        condition: service_healthy
     restart: "no"
 
   api:

@@ -7,21 +7,24 @@ from datetime import timedelta
 import structlog
 from fastapi import APIRouter, FastAPI
 from fastapi.exceptions import RequestValidationError
+from prometheus_client import CollectorRegistry
 
 from app.api.v1 import contact, content, health, media, visits
 from app.api.v1.errors import CONTACT_PATH, validation_error_handler
 from app.config import Settings, get_settings
-from app.data.cache import RedisProbe, create_redis
+from app.data.cache import RedisProbe, create_cache_redis, create_redis
 from app.data.contact_repo import ContactRepository
 from app.data.content_repo import ContentRepository
 from app.data.db import PostgresProbe, create_engine, create_session_factory
 from app.data.media_repo import MediaRepository
 from app.data.rate_limit import WindowCounter
+from app.data.response_cache import ResponseCache
 from app.data.storage import MinioProbe, create_s3_client
 from app.data.visitor_salt import Clock, DailySaltStore, utc_now
 from app.data.visits_repo import VisitRepository
 from app.logging import configure_logging
-from app.middleware import BodyLimitMiddleware, RequestIdMiddleware
+from app.metrics import CacheMetrics, serve_metrics
+from app.middleware import BodyLimitMiddleware, NoStoreMiddleware, RequestIdMiddleware
 from app.services.clients import ClientHasher
 from app.services.contact import ContactService
 from app.services.content import ContentService
@@ -67,12 +70,24 @@ def create_app(settings: Settings | None = None, clock: Clock = utc_now) -> Fast
     settings = settings or get_settings()
     configure_logging(settings.log_level)
     mail_enabled = mail_settings(settings) is not None
+    # Counters live in one registry per app; the metrics endpoint serves it.
+    registry = CollectorRegistry()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         timeout = settings.health_check_timeout_seconds
         engine = create_engine(settings.database_url, timeout)
         redis = create_redis(settings.redis_url, timeout)
+        cache_redis = create_cache_redis(
+            settings.redis_url, settings.cache_timeout_seconds
+        )
+        cache = ResponseCache(
+            cache_redis,
+            CacheMetrics(registry),
+            ttl_seconds=settings.cache_ttl_seconds,
+            timeout_seconds=settings.cache_timeout_seconds,
+            retry_seconds=settings.cache_retry_seconds,
+        )
         s3 = create_s3_client(
             settings.minio_endpoint,
             settings.minio_access_key,
@@ -86,8 +101,10 @@ def create_app(settings: Settings | None = None, clock: Clock = utc_now) -> Fast
         }
         app.state.health_service = HealthService(probes, timeout)
         session_factory = create_session_factory(engine)
-        app.state.content_service = ContentService(ContentRepository(session_factory))
-        app.state.media_service = MediaService(MediaRepository(session_factory))
+        app.state.content_service = ContentService(
+            ContentRepository(session_factory), cache
+        )
+        app.state.media_service = MediaService(MediaRepository(session_factory), cache)
         app.state.visit_service = VisitService(
             VisitRepository(session_factory),
             ClientHasher(DailySaltStore(redis, clock)),
@@ -107,9 +124,11 @@ def create_app(settings: Settings | None = None, clock: Clock = utc_now) -> Fast
             MailDelivery(mail_settings(settings)),
         )
         logger.info("startup_complete", contact_delivery=mail_enabled)
-        yield
+        async with serve_metrics(registry, settings.metrics_port):
+            yield
         await engine.dispose()
         await redis.aclose()
+        await cache_redis.aclose()
         s3.close()
         logger.info("shutdown_complete")
 
@@ -122,6 +141,8 @@ def create_app(settings: Settings | None = None, clock: Clock = utc_now) -> Fast
     )
     app.add_exception_handler(RequestValidationError, validation_error_handler)
     app.add_middleware(RequestIdMiddleware)
+    # Outermost, so even an answer made by the layers above gets its header.
+    app.add_middleware(NoStoreMiddleware)
 
     api_v1 = APIRouter(prefix="/api/v1")
     api_v1.include_router(health.router)
@@ -130,4 +151,5 @@ def create_app(settings: Settings | None = None, clock: Clock = utc_now) -> Fast
     api_v1.include_router(visits.router)
     api_v1.include_router(contact.router)
     app.include_router(api_v1)
+    app.state.metrics_registry = registry
     return app
