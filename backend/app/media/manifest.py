@@ -69,6 +69,17 @@ class HikerEntry(_Strict):
     file: ContentPath
 
 
+class StillsEntry(_Strict):
+    """The still tier's pictures of the scene.
+
+    Tracked in `content/` like the Hiker's model: they are generated from the
+    scene by a script, not personal. `folder` is a folder inside the content
+    folder holding `<position>-<wide|narrow>.png` files.
+    """
+
+    folder: ContentPath
+
+
 class MediaManifest(_Strict):
     """Every role the site can show. A role without a file is simply absent."""
 
@@ -76,6 +87,7 @@ class MediaManifest(_Strict):
     video_cv: VideoEntry
     cv_pdf: DocumentEntry
     hiker: HikerEntry | None = None
+    stills: StillsEntry | None = None
 
 
 def load_manifest(content_dir: Path) -> MediaManifest:

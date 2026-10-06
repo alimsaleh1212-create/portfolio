@@ -22,3 +22,9 @@ cv_pdf:
 # media folder, so a fresh clone and CI have it. Source and licence: hiker/CREDITS.md.
 hiker:
   file: hiker/hiker.glb
+
+# The still tier's pictures of the scene, one per position of the journey in a wide and a
+# narrow composition. Also tracked: they are generated from the scene by
+# `npm run stills` (see CLAUDE.md), not personal. `folder` is inside the content folder.
+stills:
+  folder: stills

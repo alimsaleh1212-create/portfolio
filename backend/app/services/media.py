@@ -20,10 +20,12 @@ class MediaVariant(BaseModel):
     size_bytes: int
     width: int | None
     height: int | None
+    name: str | None
+    """Which picture a still is, such as `ridge-wide`; None for everything else."""
 
 
 class MediaItem(BaseModel):
-    """One media item: the Portrait, the Video CV, the CV PDF or the Hiker's model."""
+    """One media item: a Portrait, Video CV, CV PDF, Hiker model or the stills."""
 
     role: MediaRole
     alt: str | None
@@ -76,6 +78,7 @@ class MediaService:
                         size_bytes=variant.size_bytes,
                         width=variant.width,
                         height=variant.height,
+                        name=variant.name,
                     )
                     for variant in record.variants
                 ],

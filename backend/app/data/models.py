@@ -84,7 +84,9 @@ class ProjectRow(Base):
 
 
 class MediaItemRow(Base):
-    """One prepared media item, keyed by its role (portrait, video_cv, cv_pdf, hiker).
+    """One prepared media item, keyed by its role.
+
+    The roles are portrait, video_cv, cv_pdf, hiker and stills.
 
     `variants` lists the stored objects as JSON (kind, format, key, size and
     dimensions). `source_sha256` and `settings_hash` say what the objects were
