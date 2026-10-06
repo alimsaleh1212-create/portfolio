@@ -82,7 +82,7 @@
       "id": 2,
       "type": "stat",
       "title": "Projects opened",
-      "description": "Project pages opened by Visits in the selected range (a Visit that opens one Project twice counts it once per page view recorded).",
+      "description": "Project pages opened by Visits in the selected range (one per page view recorded).",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "postgres"
@@ -532,7 +532,7 @@
       "gridPos": {
         "x": 0,
         "y": 21,
-        "w": 8,
+        "w": 7,
         "h": 7
       },
       "fieldConfig": {
@@ -598,9 +598,9 @@
         }
       ],
       "gridPos": {
-        "x": 8,
+        "x": 7,
         "y": 21,
-        "w": 8,
+        "w": 7,
         "h": 7
       },
       "fieldConfig": {
@@ -666,9 +666,9 @@
         }
       ],
       "gridPos": {
-        "x": 16,
+        "x": 14,
         "y": 21,
-        "w": 8,
+        "w": 10,
         "h": 7
       },
       "fieldConfig": {
@@ -737,7 +737,7 @@
         "x": 0,
         "y": 28,
         "w": 24,
-        "h": 10
+        "h": 8
       },
       "fieldConfig": {
         "defaults": {
