@@ -16,3 +16,9 @@ cv_pdf:
   file: Ali_Saleh_CV_AI_Development_Specialist.pdf
   # The name the browser saves the download under.
   download_name: Ali_Saleh_CV.pdf
+
+# The Hiker's 3D model is the one media item that is tracked in the repository:
+# its licence (CC0) allows it. The path is inside the content folder, not the
+# media folder, so a fresh clone and CI have it. Source and licence: hiker/CREDITS.md.
+hiker:
+  file: hiker/hiker.glb

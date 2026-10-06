@@ -4,9 +4,9 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-MediaRole = Literal["portrait", "video_cv", "cv_pdf"]
-ROLE_ORDER: tuple[MediaRole, ...] = ("portrait", "video_cv", "cv_pdf")
-VariantKind = Literal["image", "video", "poster", "document"]
+MediaRole = Literal["portrait", "video_cv", "cv_pdf", "hiker"]
+ROLE_ORDER: tuple[MediaRole, ...] = ("portrait", "video_cv", "cv_pdf", "hiker")
+VariantKind = Literal["image", "video", "poster", "document", "model"]
 
 
 class Variant(BaseModel):
@@ -14,7 +14,7 @@ class Variant(BaseModel):
 
     kind: VariantKind
     format: str
-    """avif, webp, jpeg, h264 or pdf."""
+    """avif, webp, jpeg, h264, pdf or glb."""
     content_type: str
     key: str
     """The object's key in the bucket; Caddy serves it at `/media/<key>`."""

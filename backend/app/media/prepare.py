@@ -77,6 +77,8 @@ def settings_fingerprint(role: MediaRole, extra: str = "") -> str:
             "poster": images.POSTER_WIDTHS,
             "quality": [images.AVIF_QUALITY, images.WEBP_QUALITY, images.JPEG_QUALITY],
         }
+    elif role == "hiker":
+        settings = {"format": "glb"}
     else:
         settings = {"disposition": extra}
     payload = json.dumps([role, settings, extra], sort_keys=True, default=list)
@@ -210,6 +212,39 @@ def prepare_document(source: Path, download_name: str) -> Prepared:
                     size_bytes=source.stat().st_size,
                 ),
                 content_disposition=f'attachment; filename="{download_name}"',
+            )
+        ]
+    )
+
+
+GLB_MAGIC = b"glTF"
+
+
+class ModelError(Exception):
+    """The model file is not a binary glTF."""
+
+
+def prepare_model(source: Path) -> Prepared:
+    """Describe the Hiker's model as it is; it is stored byte for byte.
+
+    Raises:
+        ModelError: If the file does not start with the binary glTF header.
+    """
+    with source.open("rb") as handle:
+        if handle.read(len(GLB_MAGIC)) != GLB_MAGIC:
+            raise ModelError(f"{source.name} is not a binary glTF (.glb) file")
+    digest = sha256_of_file(source)[:HASH_CHARS]
+    return Prepared(
+        files=[
+            PreparedFile(
+                path=source,
+                variant=Variant(
+                    kind="model",
+                    format="glb",
+                    content_type="model/gltf-binary",
+                    key=f"hiker-{digest}.glb",
+                    size_bytes=source.stat().st_size,
+                ),
             )
         ]
     )

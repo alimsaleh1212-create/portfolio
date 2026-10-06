@@ -54,7 +54,12 @@ def test_real_content_has_six_projects(settings: Settings) -> None:
 
 
 def test_nothing_under_content_looks_like_a_phone_number(settings: Settings) -> None:
-    files = [path for path in Path(settings.content_dir).rglob("*") if path.is_file()]
+    # The Hiker's model is a binary file; every other file is text.
+    files = [
+        path
+        for path in Path(settings.content_dir).rglob("*")
+        if path.is_file() and path.suffix != ".glb"
+    ]
 
     assert files
     offenders = [

@@ -99,6 +99,7 @@ async def seed_media(settings: Settings, *, strict: bool) -> None:
             MediaStore(s3, settings.minio_bucket),
             MediaRepository(create_session_factory(engine)),
             Path(settings.media_source_dir),
+            Path(settings.content_dir),
         )
         await pipeline.sync(manifest, strict=strict)
     finally:

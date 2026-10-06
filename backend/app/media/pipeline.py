@@ -45,10 +45,12 @@ class _Entry:
     download_name: str | None
     label: str
     poster_seconds: float = 0.0
+    in_content: bool = False
+    """The file is in the content folder (tracked), not the media folder."""
 
 
 def _entries(manifest: MediaManifest) -> list[_Entry]:
-    by_role = {
+    by_role: dict[str, _Entry] = {
         "portrait": _Entry(
             "portrait", manifest.portrait.file, manifest.portrait.alt, None, "Portrait"
         ),
@@ -68,7 +70,11 @@ def _entries(manifest: MediaManifest) -> list[_Entry]:
             "CV PDF",
         ),
     }
-    return [by_role[role] for role in ROLE_ORDER]
+    if manifest.hiker:
+        by_role["hiker"] = _Entry(
+            "hiker", manifest.hiker.file, None, None, "Hiker", in_content=True
+        )
+    return [by_role[role] for role in ROLE_ORDER if role in by_role]
 
 
 def find_missing(manifest: MediaManifest, source_dir: Path) -> list[str]:
@@ -76,7 +82,7 @@ def find_missing(manifest: MediaManifest, source_dir: Path) -> list[str]:
     return [
         f"{entry.label}: {entry.file} not found in {source_dir}"
         for entry in _entries(manifest)
-        if not (source_dir / entry.file).is_file()
+        if not entry.in_content and not (source_dir / entry.file).is_file()
     ]
 
 
@@ -92,12 +98,21 @@ class MediaPipeline:
     """Syncs one source folder into MinIO and Postgres."""
 
     def __init__(
-        self, store: MediaStore, repository: MediaRepository, source_dir: Path
+        self,
+        store: MediaStore,
+        repository: MediaRepository,
+        source_dir: Path,
+        content_dir: Path,
     ) -> None:
-        """Store the bucket, the table and the folder to read from."""
+        """Store the bucket, the table and the folders to read from.
+
+        `source_dir` holds the private media; `content_dir` holds the tracked
+        files (the Hiker's model).
+        """
         self._store = store
         self._repository = repository
         self._source_dir = source_dir
+        self._content_dir = content_dir
 
     async def sync(
         self, manifest: MediaManifest, *, strict: bool = False
@@ -133,8 +148,13 @@ class MediaPipeline:
         return report
 
     async def _sync_role(self, entry: _Entry, report: MediaReport) -> None:
-        source = self._source_dir / entry.file
+        source = (self._content_dir if entry.in_content else self._source_dir) / (
+            entry.file
+        )
         existing = await self._repository.get(entry.role)
+        if entry.in_content and not source.is_file():
+            # A tracked file is part of the repository: its absence is a mistake.
+            raise ContentError(f"{entry.label}: {entry.file} not found in content")
         if not source.is_file():
             logger.warning(
                 "media_source_missing", role=entry.role, file=entry.file, skipped=True
@@ -227,6 +247,8 @@ class MediaPipeline:
             return prepare.prepare_portrait(source, folder)
         if entry.role == "video_cv":
             return prepare.prepare_video(source, folder, entry.poster_seconds)
+        if entry.role == "hiker":
+            return prepare.prepare_model(source)
         return prepare.prepare_document(source, entry.download_name or source.name)
 
     async def _sweep(self, report: MediaReport) -> None:

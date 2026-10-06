@@ -21,6 +21,17 @@ def _plain_file_name(name: str) -> str:
 FileName = Annotated[str, AfterValidator(_plain_file_name)]
 
 
+def _content_path(name: str) -> str:
+    """Reject absolute paths and any `..`, so a path stays inside the content folder."""
+    path = Path(name)
+    if path.is_absolute() or ".." in path.parts or name in {"", "."}:
+        raise ValueError("must be a path inside the content folder")
+    return name
+
+
+ContentPath = Annotated[str, AfterValidator(_content_path)]
+
+
 class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -48,12 +59,23 @@ class DocumentEntry(_Strict):
     download_name: FileName
 
 
+class HikerEntry(_Strict):
+    """The Hiker's 3D model.
+
+    Unlike the others it is tracked in `content/`, because its licence (CC0)
+    allows it, so `file` is a path inside the content folder.
+    """
+
+    file: ContentPath
+
+
 class MediaManifest(_Strict):
     """Every role the site can show. A role without a file is simply absent."""
 
     portrait: PortraitEntry
     video_cv: VideoEntry
     cv_pdf: DocumentEntry
+    hiker: HikerEntry | None = None
 
 
 def load_manifest(content_dir: Path) -> MediaManifest:
