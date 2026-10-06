@@ -103,10 +103,16 @@ class BodyLimitMiddleware:
     otherwise, so chunked uploads cannot slip past it.
     """
 
-    def __init__(self, app: ASGIApp, max_bytes: int) -> None:
-        """Wrap an ASGI app."""
+    def __init__(
+        self,
+        app: ASGIApp,
+        max_bytes: int,
+        path_limits: dict[str, int] | None = None,
+    ) -> None:
+        """Wrap an ASGI app; `path_limits` gives some paths a larger limit."""
         self.app = app
         self._max_bytes = max_bytes
+        self._path_limits = path_limits or {}
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """Handle one ASGI connection."""
@@ -114,8 +120,9 @@ class BodyLimitMiddleware:
             await self.app(scope, receive, send)
             return
 
+        max_bytes = self._path_limits.get(scope["path"], self._max_bytes)
         declared = dict(scope["headers"]).get(b"content-length", b"")
-        if declared.isdigit() and int(declared) > self._max_bytes:
+        if declared.isdigit() and int(declared) > max_bytes:
             await self._refuse(scope, receive, send)
             return
 
@@ -126,7 +133,7 @@ class BodyLimitMiddleware:
             message = await receive()
             if message["type"] == "http.request":
                 received += len(message.get("body", b""))
-                if received > self._max_bytes:
+                if received > max_bytes:
                     # An HTTPException passes through FastAPI's body parsing (any other
                     # exception there becomes a 400) and is answered as a 413.
                     raise HTTPException(status_code=413, detail=BODY_TOO_LARGE)

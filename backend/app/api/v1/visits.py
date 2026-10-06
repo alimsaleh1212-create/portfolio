@@ -6,13 +6,11 @@ validation error response or log.
 """
 
 import uuid
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.deps import VisitServiceDep
-from app.services.clients import ClientInfo, parse_forwarded_address
+from app.deps import ClientDep, VisitServiceDep
 from app.services.visits import (
     RATE_LIMIT_WINDOW_SECONDS,
     RateLimitedError,
@@ -30,17 +28,6 @@ class VisitStarted(BaseModel):
     """A started Visit."""
 
     id: uuid.UUID
-
-
-def get_client(request: Request) -> ClientInfo:
-    """Build the in-memory client description for this request."""
-    forwarded = parse_forwarded_address(request.headers.get("x-forwarded-for"))
-    # Without the proxy header (a direct call, as in tests) fall back to the peer.
-    address = forwarded or (request.client.host if request.client else "")
-    return ClientInfo(address, request.headers.get("user-agent", ""))
-
-
-ClientDep = Annotated[ClientInfo, Depends(get_client)]
 
 
 def _too_many() -> HTTPException:
