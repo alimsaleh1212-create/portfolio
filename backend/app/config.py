@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -13,7 +14,7 @@ class Settings(BaseSettings):
     No `.env` file is read by the application; Compose injects the variables.
     """
 
-    model_config = SettingsConfigDict(extra="ignore")
+    model_config = SettingsConfigDict(extra="ignore", env_ignore_empty=True)
 
     database_url: str
     redis_url: str
@@ -32,6 +33,20 @@ class Settings(BaseSettings):
     # Requests per client per minute; beyond them the API answers 429.
     visit_start_limit_per_minute: int = 20
     visit_event_limit_per_minute: int = 120
+    # Contact messages accepted per client per hour; beyond them the API answers 429.
+    contact_limit_per_hour: int = 3
+    # Mail delivery of contact messages. Delivery is on only when the server,
+    # sender and recipient are all set; otherwise messages are stored only.
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    # "starttls" (upgrade a plain connection), "tls" (encrypted from the start)
+    # or "none" (plain text, for a catcher on a private network only).
+    smtp_security: Literal["starttls", "tls", "none"] = "starttls"
+    mail_sender: str | None = None
+    mail_recipient: str | None = None
+    smtp_timeout_seconds: float = 10.0
 
 
 @lru_cache

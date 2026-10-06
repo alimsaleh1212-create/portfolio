@@ -138,3 +138,24 @@ class VisitEventRow(Base):
     stage_key: Mapped[str | None] = mapped_column(String(32))
     project_slug: Mapped[str | None] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ContactMessageRow(Base):
+    """One contact message.
+
+    Deliberately has no Visit ID: a name and an email address beside a Visit
+    would identify that Visit, which ADR 0002 forbids. This table is the one
+    place personal details are stored, because the Visitor typed them in.
+    """
+
+    __tablename__ = "contact_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, primary_key=True, server_default=func.gen_random_uuid()
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    name: Mapped[str] = mapped_column(String(100))
+    email: Mapped[str] = mapped_column(String(254))
+    message: Mapped[str] = mapped_column(Text)

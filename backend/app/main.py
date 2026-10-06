@@ -6,10 +6,13 @@ from datetime import timedelta
 
 import structlog
 from fastapi import APIRouter, FastAPI
+from fastapi.exceptions import RequestValidationError
 
-from app.api.v1 import content, health, media, visits
+from app.api.v1 import contact, content, health, media, visits
+from app.api.v1.errors import CONTACT_PATH, validation_error_handler
 from app.config import Settings, get_settings
 from app.data.cache import RedisProbe, create_redis
+from app.data.contact_repo import ContactRepository
 from app.data.content_repo import ContentRepository
 from app.data.db import PostgresProbe, create_engine, create_session_factory
 from app.data.media_repo import MediaRepository
@@ -20,8 +23,10 @@ from app.data.visits_repo import VisitRepository
 from app.logging import configure_logging
 from app.middleware import BodyLimitMiddleware, RequestIdMiddleware
 from app.services.clients import ClientHasher
+from app.services.contact import ContactService
 from app.services.content import ContentService
 from app.services.health import HealthService, Probe
+from app.services.mailer import MailDelivery, MailSettings
 from app.services.media import MediaService
 from app.services.visits import RateLimits, VisitService
 
@@ -29,6 +34,24 @@ logger = structlog.get_logger(__name__)
 
 # Request bodies are tiny JSON objects; anything bigger is refused.
 MAX_BODY_BYTES = 4096
+# A message of 4000 characters can be 16 KB in UTF-8 and more when JSON escapes it.
+CONTACT_MAX_BODY_BYTES = 32768
+
+
+def mail_settings(settings: Settings) -> MailSettings | None:
+    """Return the mail settings, or None unless all the needed ones are set."""
+    if not (settings.smtp_host and settings.mail_sender and settings.mail_recipient):
+        return None
+    return MailSettings(
+        host=settings.smtp_host,
+        port=settings.smtp_port,
+        security=settings.smtp_security,
+        sender=settings.mail_sender,
+        recipient=settings.mail_recipient,
+        timeout_seconds=settings.smtp_timeout_seconds,
+        username=settings.smtp_username,
+        password=settings.smtp_password,
+    )
 
 
 def create_app(settings: Settings | None = None, clock: Clock = utc_now) -> FastAPI:
@@ -43,6 +66,7 @@ def create_app(settings: Settings | None = None, clock: Clock = utc_now) -> Fast
     """
     settings = settings or get_settings()
     configure_logging(settings.log_level)
+    mail_enabled = mail_settings(settings) is not None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -75,7 +99,14 @@ def create_app(settings: Settings | None = None, clock: Clock = utc_now) -> Fast
             timedelta(hours=settings.visit_max_age_hours),
             clock,
         )
-        logger.info("startup_complete")
+        app.state.contact_service = ContactService(
+            ContactRepository(session_factory),
+            ClientHasher(DailySaltStore(redis, clock)),
+            WindowCounter(redis),
+            settings.contact_limit_per_hour,
+            MailDelivery(mail_settings(settings)),
+        )
+        logger.info("startup_complete", contact_delivery=mail_enabled)
         yield
         await engine.dispose()
         await redis.aclose()
@@ -84,7 +115,12 @@ def create_app(settings: Settings | None = None, clock: Clock = utc_now) -> Fast
 
     app = FastAPI(title="Portfolio API", lifespan=lifespan)
     # Added first, so it sits inside the request ID middleware and its 413 is logged.
-    app.add_middleware(BodyLimitMiddleware, max_bytes=MAX_BODY_BYTES)
+    app.add_middleware(
+        BodyLimitMiddleware,
+        max_bytes=MAX_BODY_BYTES,
+        path_limits={CONTACT_PATH: CONTACT_MAX_BODY_BYTES},
+    )
+    app.add_exception_handler(RequestValidationError, validation_error_handler)
     app.add_middleware(RequestIdMiddleware)
 
     api_v1 = APIRouter(prefix="/api/v1")
@@ -92,5 +128,6 @@ def create_app(settings: Settings | None = None, clock: Clock = utc_now) -> Fast
     api_v1.include_router(content.router)
     api_v1.include_router(media.router)
     api_v1.include_router(visits.router)
+    api_v1.include_router(contact.router)
     app.include_router(api_v1)
     return app

@@ -82,6 +82,17 @@ services:
       MINIO_BUCKET: ${MINIO_BUCKET:-portfolio-media}
       HEALTH_CHECK_TIMEOUT_SECONDS: ${HEALTH_CHECK_TIMEOUT_SECONDS:-2}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Contact message delivery by email. Off unless SMTP_HOST, MAIL_SENDER and
+      # MAIL_RECIPIENT are all set (see .env.example).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_SECURITY: ${SMTP_SECURITY:-starttls}
+      MAIL_SENDER: ${MAIL_SENDER:-}
+      MAIL_RECIPIENT: ${MAIL_RECIPIENT:-}
+      # Contact messages accepted per client per hour.
+      CONTACT_LIMIT_PER_HOUR: ${CONTACT_LIMIT_PER_HOUR:-3}
       # Where the content files are mounted inside the container.
       CONTENT_DIR: /content
       # Where the media folder is mounted inside the seed container.
