@@ -10,6 +10,8 @@ import { Opening } from "../climb/Opening";
 import { padClass, StageSection } from "../climb/StageSection";
 import { SummitAhead } from "../climb/SummitAhead";
 import { SceneHost } from "../scene/SceneHost";
+import { StillBackdrop } from "../still/StillBackdrop";
+import { useTier } from "../tier/tier";
 import { usePageTitle } from "../usePageTitle";
 import { recordStageReached } from "../visit/visit";
 
@@ -40,6 +42,7 @@ function ClimbContent({
   media,
 }: Extract<ClimbContentState, { status: "ready" }>) {
   const { hash } = useLocation();
+  const tier = useTier();
   const keys = stages.map((stage) => stage.key);
   const keyList = keys.join(",");
 
@@ -81,6 +84,7 @@ function ClimbContent({
   return (
     <div>
       <SceneHost />
+      {tier === "still" && <StillBackdrop media={media} />}
       <Opening profile={profile} firstStage={keys[0]} />
       <AltitudeMeter stages={stages.map(({ key, name }) => ({ key, name }))} />
       {stages.map((stage) => (

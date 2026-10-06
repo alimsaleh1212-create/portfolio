@@ -131,6 +131,7 @@ const image = (
   size_bytes: width * 10,
   width,
   height,
+  name: null,
 });
 
 const widths = [320, 640, 1280];
@@ -162,6 +163,7 @@ export const videoItem: MediaItem = {
       size_bytes: 22_800_000,
       width: 1920,
       height: 1080,
+      name: null,
     },
     {
       kind: "video",
@@ -171,6 +173,7 @@ export const videoItem: MediaItem = {
       size_bytes: 12_500_000,
       width: 1280,
       height: 720,
+      name: null,
     },
     ...[960, 1280].flatMap((width) =>
       formats.map((format) =>
@@ -194,6 +197,7 @@ export const cvItem: MediaItem = {
       size_bytes: 89_000,
       width: null,
       height: null,
+      name: null,
     },
   ],
 };
@@ -254,3 +258,40 @@ export const stages: Stage[] = [
     "I lead two engineers.",
   ),
 ];
+
+/** The still tier's pictures: each position in a wide and a narrow composition. */
+export const stillsItem: MediaItem = {
+  role: "stills",
+  alt: null,
+  download_name: null,
+  duration_seconds: null,
+  variants: [
+    "opening",
+    "trailhead",
+    "long-approach",
+    "steep-switch",
+    "ridge",
+    "high-camp",
+    "summit",
+  ].flatMap((position) =>
+    (
+      [
+        ["wide", [640, 1024, 1600], 1.6],
+        ["narrow", [360, 585], 0.4875],
+      ] as const
+    ).flatMap(([composition, sizes, ratio]) =>
+      sizes.flatMap((width) =>
+        formats.map((format) => ({
+          ...image(
+            "still",
+            format,
+            `${position}-${composition}`,
+            width,
+            Math.round(width / ratio),
+          ),
+          name: `${position}-${composition}`,
+        })),
+      ),
+    ),
+  ),
+};
