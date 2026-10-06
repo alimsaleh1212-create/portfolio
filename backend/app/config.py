@@ -24,6 +24,16 @@ class Settings(BaseSettings):
     minio_bucket: str = "portfolio-media"
     health_check_timeout_seconds: float = 2.0
     log_level: str = "INFO"
+    # Response cache. Entries expire after this long as a safety net; the seed
+    # invalidates them, so the expiry is not what keeps content fresh.
+    cache_ttl_seconds: int = 3600
+    # Longest a cache read or write may take before the request goes to Postgres.
+    cache_timeout_seconds: float = 0.25
+    # After a cache failure, how long the cache is skipped before trying again.
+    cache_retry_seconds: float = 5.0
+    # Port of the metrics endpoint (`/metrics`), served apart from the API so
+    # Caddy never proxies it. 0 turns it off.
+    metrics_port: int = 9100
     # Folder holding profile.yaml, stages.yaml and projects.yaml.
     content_dir: Path = Path("/content")
     # Folder holding the source photograph, video and PDF, mounted read-only.
