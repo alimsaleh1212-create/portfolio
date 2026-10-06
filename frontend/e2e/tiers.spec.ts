@@ -100,7 +100,18 @@ test.describe("the still tier", () => {
     for (const y of positions) {
       await page.evaluate((to) => window.scrollTo(0, to), y);
       // The scroll has landed and a frame has been drawn at the new place.
-      await page.waitForFunction((to) => Math.abs(window.scrollY - to) < 2, y);
+      await page.waitForFunction(
+        (to) =>
+          // The bottom of the page cannot be scrolled to its own height, only to its last screen.
+          Math.abs(
+            window.scrollY -
+              Math.min(
+                to,
+                document.documentElement.scrollHeight - window.innerHeight,
+              ),
+          ) < 2,
+        y,
+      );
       await nextFrames(page);
       const running = await page.evaluate(() =>
         document
