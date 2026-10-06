@@ -24,7 +24,7 @@ export function Opening({
       {/* With the mountain drawn behind, the text column is darkened so it stays readable. */}
       <div
         aria-hidden="true"
-        className="bg-scrim-veil lg:bg-scrim-left scene:block pointer-events-none absolute inset-0 hidden"
+        className="bg-scrim-top lg:bg-scrim-left scene:block pointer-events-none absolute inset-0 hidden"
       />
       <div className="max-w-page relative z-10 mx-auto w-full">
         <div className="max-w-measure animate-rise">

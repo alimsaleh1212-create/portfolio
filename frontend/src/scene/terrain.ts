@@ -233,9 +233,20 @@ function bakeShade(terrain: Terrain): Float32Array {
       h(i + 1, j + 1) * a * b
     );
   };
+  // Shade changes slowly across the ground, so it is cast from every other vertex and the rest
+  // are interpolated: a quarter of the rays for the same picture.
   const step = 3;
-  for (let j = 0; j <= cellsZ; j++) {
-    for (let i = 0; i <= cellsX; i++) {
+  let highest = -Infinity;
+  for (let k = 1; k < vertices.length; k += 3)
+    highest = Math.max(highest, vertices[k]);
+  const skip = 2;
+  const columns = Math.ceil(cellsX / skip) + 1;
+  const rows = Math.ceil(cellsZ / skip) + 1;
+  const coarse = new Float32Array(columns * rows);
+  for (let cj = 0; cj < rows; cj++) {
+    for (let ci = 0; ci < columns; ci++) {
+      const i = Math.min(cellsX, ci * skip);
+      const j = Math.min(cellsZ, cj * skip);
       const o = (j * width + i) * 3;
       const x = vertices[o];
       const y = vertices[o + 1];
@@ -243,13 +254,31 @@ function bakeShade(terrain: Terrain): Float32Array {
       let worst = 0;
       for (let s = 1; s <= 56; s++) {
         const d = s * step;
+        const rayY = y + 1.2 + rise * d;
+        if (rayY > highest) break;
         const px = x + SUN_AZIMUTH.x * d;
         const pz = z + SUN_AZIMUTH.z * d;
         if (px < minX || px > maxX || pz < minZ || pz > maxZ) break;
-        const over = sample(px, pz) - (y + 1.2 + rise * d);
+        const over = sample(px, pz) - rayY;
         if (over > worst) worst = over;
       }
-      out[j * width + i] = smoothstep(0, 7, worst);
+      coarse[cj * columns + ci] = smoothstep(0, 7, worst);
+    }
+  }
+  for (let j = 0; j <= cellsZ; j++) {
+    for (let i = 0; i <= cellsX; i++) {
+      const fi = i / skip;
+      const fj = j / skip;
+      const i0 = Math.min(columns - 2, Math.floor(fi));
+      const j0 = Math.min(rows - 2, Math.floor(fj));
+      const a = fi - i0;
+      const b = fj - j0;
+      const c = (jj: number, ii: number) => coarse[jj * columns + ii];
+      out[j * width + i] =
+        c(j0, i0) * (1 - a) * (1 - b) +
+        c(j0, i0 + 1) * a * (1 - b) +
+        c(j0 + 1, i0) * (1 - a) * b +
+        c(j0 + 1, i0 + 1) * a * b;
     }
   }
   return out;

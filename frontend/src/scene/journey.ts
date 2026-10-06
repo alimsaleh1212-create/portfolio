@@ -130,49 +130,49 @@ export const POSE_KEYS: PoseKey[] = [
     target: [14, 60, -110],
     fov: 44,
     wide: [0.22, -0.02],
-    narrow: [0, -0.1],
+    narrow: [0, -0.2],
   },
   {
     position: [-8, 9, 112],
     target: [12, 64, -100],
     fov: 44,
     wide: [0.24, -0.02],
-    narrow: [0, -0.08],
+    narrow: [0, 0.1],
   },
   {
     position: [-10, 13, 52],
     target: [-6, 58, -90],
     fov: 50,
     wide: [-0.22, 0],
-    narrow: [0, -0.06],
+    narrow: [0, 0.1],
   },
   {
     position: [6, 26, -6],
     target: [4, 56, -76],
     fov: 56,
     wide: [0.22, 0],
-    narrow: [0, -0.04],
+    narrow: [0, 0.1],
   },
   {
     position: [-6, 40, -38],
     target: [8, 78, -112],
     fov: 58,
     wide: [0.14, 0],
-    narrow: [0, 0],
+    narrow: [0, 0.1],
   },
   {
     position: [-4, 46, -60],
     target: [2, 96, -112],
     fov: 52,
     wide: [-0.22, 0],
-    narrow: [0, 0],
+    narrow: [0, 0.06],
   },
   {
     position: [-6, 62, -64],
     target: [8, 116, -131],
     fov: 46,
     wide: [0.2, 0.14],
-    narrow: [0, 0],
+    narrow: [0, 0.06],
   },
 ];
 
@@ -208,7 +208,7 @@ export function poseAt(u: number, narrow: boolean): Pose {
 
 /** A narrow screen is shown a wider view, so the mountain is not cropped to a sliver. */
 export function fieldOfView(fov: number, aspect: number): number {
-  const minHorizontal = (42 * Math.PI) / 180;
+  const minHorizontal = (36 * Math.PI) / 180;
   const needed =
     (2 * Math.atan(Math.tan(minHorizontal / 2) / Math.max(aspect, 0.2)) * 180) /
     Math.PI;

@@ -166,6 +166,7 @@ const NON_COLOR_WORDS = new Set([
   "scrim-left",
   "scrim-right",
   "scrim-veil",
+  "scrim-top",
   "slope-rise",
   "rail-shade",
   "no-repeat",

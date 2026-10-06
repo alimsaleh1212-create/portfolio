@@ -247,21 +247,29 @@
    */
   --background-image-scrim-left: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--color-ground) 82%, transparent),
-    color-mix(in srgb, var(--color-ground) 62%, transparent) 40%,
-    transparent 66%
+    color-mix(in srgb, var(--color-ground) 86%, transparent),
+    color-mix(in srgb, var(--color-ground) 72%, transparent) 50%,
+    color-mix(in srgb, var(--color-ground) 38%, transparent) 62%,
+    transparent 78%
   );
   --background-image-scrim-right: linear-gradient(
     270deg,
-    color-mix(in srgb, var(--color-ground) 82%, transparent),
-    color-mix(in srgb, var(--color-ground) 62%, transparent) 40%,
-    transparent 66%
+    color-mix(in srgb, var(--color-ground) 86%, transparent),
+    color-mix(in srgb, var(--color-ground) 72%, transparent) 50%,
+    color-mix(in srgb, var(--color-ground) 38%, transparent) 62%,
+    transparent 78%
   );
   --background-image-scrim-veil: linear-gradient(
-    color-mix(in srgb, var(--color-ground) 40%, transparent),
-    color-mix(in srgb, var(--color-ground) 76%, transparent) 24%,
-    color-mix(in srgb, var(--color-ground) 76%, transparent) 76%,
-    color-mix(in srgb, var(--color-ground) 40%, transparent)
+    color-mix(in srgb, var(--color-ground) 24%, transparent),
+    color-mix(in srgb, var(--color-ground) 48%, transparent) 24%,
+    color-mix(in srgb, var(--color-ground) 48%, transparent) 76%,
+    color-mix(in srgb, var(--color-ground) 24%, transparent)
+  );
+  /* The opening screen on a narrow screen: the text is at the top, the mountain below it. */
+  --background-image-scrim-top: linear-gradient(
+    color-mix(in srgb, var(--color-ground) 76%, transparent),
+    color-mix(in srgb, var(--color-ground) 56%, transparent) 46%,
+    transparent 84%
   );
   /* A soft shade down the right edge, behind the altitude meter's rail. */
   --background-image-rail-shade: linear-gradient(
