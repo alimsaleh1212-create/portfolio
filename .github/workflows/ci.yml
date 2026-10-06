@@ -157,6 +157,66 @@ jobs:
         env:
           BASE_URL: http://localhost:8080
           CHROME_PATH: /usr/bin/google-chrome
+          WORKERS: 4
+      - name: Keep the report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          retention-days: 7
+      - name: Show service logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
+  lighthouse:
+    name: Lighthouse (phone profile, built site, real API)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      # The browser tests send a message from every tier and size; the real limit (3 an hour per
+      # client) would stop the fourth, so this stack, and only this one, allows many.
+      - name: Create .env from the example
+        run: |
+          cp .env.example .env
+          echo "CONTACT_LIMIT_PER_HOUR=1000" >> .env
+      # The production images, built with a layer cache that outlives the run: the API, the seed
+      # (which installs ffmpeg), Caddy with the built frontend, and the pre-render job (which shares
+      # Caddy's frontend build). Without the cache each run rebuilt all of them from nothing.
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the production images with layer caching
+        uses: docker/bake-action@v6
+        with:
+          source: .
+          files: compose.yaml
+          targets: api,seed,caddy,prerender
+          set: |
+            *.cache-from=type=gha,scope=prod-stack
+            *.cache-to=type=gha,mode=max,scope=prod-stack
+          load: true
+      # The one-shot `prerender` job is part of the stack, and Caddy waits for it: a pre-render
+      # that cannot draw a page fails the stack here, and so the workflow. Nothing is built again.
+      - name: Start the stack
+        run: docker compose up -d --wait
+      - name: Check what the pre-render wrote
+        run: |
+          docker compose logs prerender
+          test "$(curl -s localhost:8080/sitemap.xml | grep -c '<loc>')" -ge 8
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/nowhere)" = 404
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # The runner already has Chrome (the tests use it through CHROME_PATH), so there is no
+      # browser to download and no system packages to install.
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
       # Lighthouse on a phone profile, for the landing page, the Summary and the landing page with
       # the full 3D tier forced. It fails the build when Accessibility or Best Practices is under 95
       # (stable, and the ticket's bar); the Performance score is only reported, because it moves by
@@ -175,13 +235,6 @@ jobs:
           name: lighthouse-report
           path: frontend/lighthouse-report
           retention-days: 14
-      - name: Keep the report
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: frontend/playwright-report
-          retention-days: 7
       - name: Show service logs on failure
         if: failure()
         run: docker compose logs --no-color
