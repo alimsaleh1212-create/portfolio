@@ -9,7 +9,7 @@ a character in a free asset pack, with changes listed below.
   (commit `672074b73ba276876a19e8816ecdc5241817ab47`), file
   `addons/kaykit_character_pack_adventures/Characters/gltf/Rogue_Hooded.glb`. The author's own
   page is <https://kaylousberg.itch.io/kaykit-adventurers>.
-- **Fetched**: 2026-10-06
+- **Fetched**: 6 October 2026
 - **Licence**: Creative Commons Zero v1.0 Universal (CC0, public domain dedication),
   <https://creativecommons.org/publicdomain/zero/1.0/>. The pack's `LICENSE.txt` says: "License:
   (Creative Commons Zero, CC0) ... This content is free to use in personal, educational and

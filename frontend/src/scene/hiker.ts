@@ -354,9 +354,9 @@ export class Hiker {
     this.glow.position.copy(this.lanternBox);
     this.glow.quaternion.copy(camera.quaternion);
     this.world.copy(this.lanternBox).sub(camera.position);
-    const size = Math.max(4, this.world.length() * 0.14);
+    const size = Math.max(4, this.world.length() * 0.11);
     this.glow.scale.setScalar(size);
-    this.glowMaterial.uniforms.uAmount.value = amount * 1.6;
+    this.glowMaterial.uniforms.uAmount.value = amount * 0.85;
     this.lanternMaterial.color.copy(this.options.colors["first-light"]);
 
     this.started = true;
