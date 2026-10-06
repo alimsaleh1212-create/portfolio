@@ -439,7 +439,15 @@ def test_the_stills_are_rendered_at_each_compositions_widths(env: Env) -> None:
     assert by_name == {
         "ridge-wide": {640, 1024, 1600},
         "ridge-narrow": {360, 585},
+        "ridge-preview": {1200},
     }
+    preview = next(v for v in variants if v["name"] == "ridge-preview")
+    assert (preview["width"], preview["height"], preview["format"]) == (
+        1200,
+        630,
+        "jpeg",
+    )
+    assert preview["key"].startswith("still-ridge-preview-w1200-")
     assert {variant["format"] for variant in variants} == {"avif", "webp", "jpeg"}
     first = variants[0]
     assert first["key"].startswith("still-ridge-narrow-w360-")
