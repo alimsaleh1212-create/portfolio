@@ -39,6 +39,22 @@ describe("starting a Visit", () => {
     expect(bodyOf(fetchMock, 0)).toEqual({ device: "desktop" });
   });
 
+  it("sends the tier it was started with", () => {
+    const { fetchMock, release } = pendingVisit();
+    startVisit("light");
+    release(created());
+
+    expect(bodyOf(fetchMock, 0)).toEqual({ device: "desktop", tier: "light" });
+  });
+
+  it("still starts when no tier is known", () => {
+    const { fetchMock } = pendingVisit();
+    startVisit(undefined);
+
+    expect(urls(fetchMock)).toEqual(["/api/v1/visits"]);
+    expect(bodyOf(fetchMock, 0)).not.toHaveProperty("tier");
+  });
+
   it("starts one Visit however often it is called", () => {
     const { fetchMock } = pendingVisit();
     startVisit();
