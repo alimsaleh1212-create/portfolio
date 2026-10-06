@@ -20,3 +20,7 @@ window.matchMedia ??= (query: string) =>
 
 // Nor does it scroll an element into view.
 Element.prototype.scrollIntoView ??= () => {};
+
+// Nor does it have WebGL: a canvas yields no context, as in a browser with WebGL off.
+HTMLCanvasElement.prototype.getContext = (() =>
+  null) as unknown as typeof HTMLCanvasElement.prototype.getContext;

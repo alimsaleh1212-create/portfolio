@@ -8,12 +8,20 @@ import { padClass } from "./StageSection";
  */
 export function SummitAhead({ links }: { links: Links }) {
   return (
-    <div id="summit" className="bg-light-ground sky-fields">
+    <div
+      id="summit"
+      className="bg-light-ground scene:bg-transparent sky-fields"
+    >
       <section
         aria-labelledby="summit-heading"
-        className={`bg-summit-sky relative overflow-hidden py-section md:py-section-wide ${padClass}`}
+        className={`bg-summit-sky scene:bg-none scene:overflow-visible relative overflow-hidden py-section md:py-section-wide ${padClass}`}
       >
-        <div className="max-w-page mx-auto grid items-center gap-x-16 gap-y-12 lg:grid-cols-12">
+        {/* With the mountain drawn behind, the text column is darkened so it stays readable. */}
+        <div
+          aria-hidden="true"
+          className="bg-scrim-veil lg:bg-scrim-left scrim-fade scene:block pointer-events-none absolute -inset-y-40 hidden inset-x-0"
+        />
+        <div className="max-w-page relative mx-auto grid items-center gap-x-16 gap-y-12 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <div className="reveal">
               <h2
@@ -30,7 +38,7 @@ export function SummitAhead({ links }: { links: Links }) {
           </div>
           <div
             aria-hidden="true"
-            className="relative mx-auto h-64 w-full max-w-72 md:h-80 md:max-w-96 lg:col-span-6 lg:col-start-7"
+            className="scene:hidden relative mx-auto h-64 w-full max-w-72 md:h-80 md:max-w-96 lg:col-span-6 lg:col-start-7"
           >
             <div className="bg-summit-glow absolute -inset-x-1/2 -top-1/4 -bottom-8" />
             <div className="bg-summit-face peak absolute inset-0" />
@@ -39,7 +47,14 @@ export function SummitAhead({ links }: { links: Links }) {
           </div>
         </div>
       </section>
-      <div className={`${padClass} pb-section md:pb-section-wide`}>
+      {/* With the mountain drawn behind, the sky settles into the slope the contact section sits on. */}
+      <div
+        aria-hidden="true"
+        className="bg-slope-rise scene:block h-24 hidden md:h-40"
+      />
+      <div
+        className={`${padClass} scene:bg-light-ground pb-section md:pb-section-wide`}
+      >
         <ContactSection links={links} className="max-w-page mx-auto" />
       </div>
     </div>
