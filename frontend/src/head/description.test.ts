@@ -71,6 +71,35 @@ suite("describe", () => {
     expect(describe([text], 30)).toBe("Short one.");
   });
 
+  it("never ends on a lead-in label: when even the first sentence alone is too long it cuts at a word", () => {
+    const body =
+      "I orchestrated three coding agents with scripted phase transitions across a long chain of steps. Second.";
+    const text = describe(["Claude Code, Codex", body], 80, 1);
+    expect(text.startsWith("Claude Code, Codex. I orchestrated")).toBe(true);
+    expect(text.endsWith("…")).toBe(true);
+    expect(text.length).toBeLessThanOrEqual(80);
+  });
+
+  it("drops the lead when the first sentence fits alone but not with it", () => {
+    expect(
+      describe(
+        ["A long label for the text", "A sentence that fits alone."],
+        40,
+        1,
+      ),
+    ).toBe("A sentence that fits alone.");
+  });
+
+  it("keeps the lead and ends at the body's last whole sentence that fits", () => {
+    expect(
+      describe(
+        ["Label", "First sentence here. Second one is longer than room."],
+        40,
+        1,
+      ),
+    ).toBe("Label. First sentence here.");
+  });
+
   it("does not take a full stop inside a word or number for the end of a sentence", () => {
     expect(
       describe(["Version 2.5 is out and it is quite good indeed"], 30),

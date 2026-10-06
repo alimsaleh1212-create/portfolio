@@ -7,7 +7,7 @@
  * `useHead` applies the same model when the Visitor moves to another page.
  */
 import type { MediaItem, Profile, Project } from "../api/types";
-import { describe } from "./description";
+import { describe, DESCRIPTION_MAX } from "./description";
 import { personData } from "./structuredData";
 
 export const SITE_NAME = "Ali Saleh";
@@ -110,10 +110,11 @@ export function projectPreview(index: number): string {
 export function landingHead(profile: Profile, context: PageContext): HeadModel {
   return {
     title: `${profile.name} | ${role(profile.headline)}`,
-    description: describe([
-      profile.headline.replace(/\s*\|\s*/g, ", "),
-      profile.summary,
-    ]),
+    description: describe(
+      [profile.headline.replace(/\s*\|\s*/g, ", "), profile.summary],
+      DESCRIPTION_MAX,
+      1,
+    ),
     canonical: absolute(context.siteUrl, "/"),
     image: previewFor(context.media, LANDING_PREVIEW, context.siteUrl),
     type: "website",
@@ -138,7 +139,11 @@ export function projectHead(
 ): HeadModel {
   return {
     title: `${project.name} | ${SITE_NAME}`,
-    description: describe([project.tagline, project.description]),
+    description: describe(
+      [project.tagline, project.description],
+      DESCRIPTION_MAX,
+      1,
+    ),
     canonical: absolute(context.siteUrl, `/projects/${project.slug}`),
     image: previewFor(context.media, projectPreview(index), context.siteUrl),
     type: "article",

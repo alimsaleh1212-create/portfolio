@@ -38,20 +38,34 @@ function sentences(parts: string[]): string {
 
 /**
  * One description from one or more pieces of text, no longer than `max` characters. Pieces
- * are joined as sentences. Too long, it ends at the last complete sentence that fits; only when
+ * are joined as sentences; the first `leadCount` are labels that lead the text. Too long, it ends at the last complete sentence that fits; only when
  * the first sentence alone is too long does it end at a whole word with an ellipsis.
  */
-export function describe(parts: string[], max = DESCRIPTION_MAX): string {
+export function describe(
+  parts: string[],
+  max = DESCRIPTION_MAX,
+  leadCount = 0,
+): string {
   const text = sentences(parts);
   if (text.length <= max) return text;
+  // The first `leadCount` pieces are labels (a headline, a tagline), not sentences of the text:
+  // a description is not allowed to end on one of them.
+  const leadLength = sentences(parts.slice(0, leadCount)).length;
 
   // End at the last complete sentence that fits, however short.
   const room = text.slice(0, max);
   const stops = [...room.matchAll(/[.!?](?=\s|$)/g)].filter(
     (stop) => stop.index + 1 === max || /\s/.test(text[stop.index + 1] ?? " "),
   );
-  const lastStop = stops.at(-1);
+  const lastStop = stops.filter((stop) => stop.index + 1 > leadLength).at(-1);
   if (lastStop) return room.slice(0, lastStop.index + 1);
+
+  // The lead and the first sentence do not fit together. If the sentence fits alone, a whole
+  // sentence is better than a label and a cut one.
+  if (leadCount > 0) {
+    const alone = describe(parts.slice(leadCount), max);
+    if (alone && !alone.endsWith(ELLIPSIS)) return alone;
+  }
 
   // The first sentence alone is too long: end at a whole word, leaving room for the ellipsis.
   const limit = max - ELLIPSIS.length;
