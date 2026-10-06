@@ -34,6 +34,21 @@
   --color-line-strong: #3d4770;
   --color-dusk: #8f4f7a;
 
+  /*
+   * Colour: the Climb's light (ADR 0001). The sky at the top of each Stage, from
+   * pre-dawn at the Trailhead to sunrise at High Camp. A Stage's background runs from
+   * its own colour to the next Stage's, so the page warms continuously. The Summit's
+   * colour ends the page. Text sits on these, so each is a surface in the contrast test;
+   * first-light is the Summit catching the sun and is never a text background.
+   */
+  --color-light-trailhead: #0a0d18;
+  --color-light-long-approach: #101734;
+  --color-light-steep-switch: #1c1a36;
+  --color-light-ridge: #2d1d32;
+  --color-light-high-camp: #43241f;
+  --color-light-summit: #5b2f20;
+  --color-first-light: #ffc48a;
+
   /* Colour: text and accent */
   --color-ink: #efe9e4;
   --color-ink-muted: #a6abc6;
@@ -56,6 +71,8 @@
   --text-xl--line-height: 1.3;
   --text-2xl: 1.875rem;
   --text-2xl--line-height: 1.2;
+  --text-title: clamp(2rem, 1.4rem + 2.4vw, 3rem);
+  --text-title--line-height: 1.05;
   --text-display: clamp(2.5rem, 1.6rem + 3.6vw, 4rem);
   --text-display--line-height: 1.02;
   --font-weight-normal: 400;
@@ -98,6 +115,52 @@
     transparent
   );
 
+  /* The Climb's light as backgrounds: one per Stage, then the sky above High Camp. */
+  --background-image-stage-trailhead: linear-gradient(
+    to bottom,
+    var(--color-light-trailhead),
+    var(--color-light-long-approach)
+  );
+  --background-image-stage-long-approach: linear-gradient(
+    to bottom,
+    var(--color-light-long-approach),
+    var(--color-light-steep-switch)
+  );
+  --background-image-stage-steep-switch: linear-gradient(
+    to bottom,
+    var(--color-light-steep-switch),
+    var(--color-light-ridge)
+  );
+  --background-image-stage-ridge: linear-gradient(
+    to bottom,
+    var(--color-light-ridge),
+    var(--color-light-high-camp)
+  );
+  --background-image-stage-high-camp: linear-gradient(
+    to bottom,
+    var(--color-light-high-camp),
+    var(--color-light-summit)
+  );
+  --background-image-summit-sky: linear-gradient(
+    to bottom,
+    var(--color-light-summit),
+    var(--color-light-high-camp) 60%,
+    var(--color-light-summit)
+  );
+  /* First light on the Summit's face, and the glow the sun makes behind it. */
+  --background-image-summit-face: linear-gradient(
+    115deg,
+    var(--color-first-light),
+    var(--color-accent) 35%,
+    var(--color-dusk) 70%,
+    var(--color-light-ridge)
+  );
+  --background-image-summit-glow: radial-gradient(
+    ellipse 50% 70% at 50% 100%,
+    var(--color-first-light),
+    transparent
+  );
+
   /* Motion */
   --duration-fast: 150ms;
   --duration-base: 240ms;
@@ -127,6 +190,26 @@
     50% {
       opacity: 0.45;
     }
+  }
+}
+
+/*
+ * Scroll reveal: a block eases in as it enters the screen, tied to the scroll position
+ * rather than to time, so it never makes the Visitor wait. Where scroll-driven
+ * animation is unsupported the block is simply there. Never put it on something
+ * taller than the screen: its entry would not finish.
+ */
+@utility reveal {
+  @supports (animation-timeline: view()) {
+    animation: reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 45%;
+  }
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise-distance));
   }
 }
 
@@ -217,7 +300,43 @@
  * here (the one literal allowed outside @theme): the identity column sticks only
  * when the viewport is at least this tall.
  */
+@custom-variant hover-fine (@media (hover: hover) and (pointer: fine));
 @custom-variant tall (@media (min-height: 50rem));
+
+/* Facets of the Summit's peak and the ridgelines: flat polygons, drawn in CSS. */
+@utility peak {
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+@utility peak-shade {
+  clip-path: polygon(50% 0%, 100% 100%, 62% 100%, 44% 46%);
+}
+@utility ridgeline-far {
+  clip-path: polygon(
+    0% 70%,
+    14% 38%,
+    27% 62%,
+    43% 22%,
+    58% 58%,
+    72% 34%,
+    88% 64%,
+    100% 44%,
+    100% 100%,
+    0% 100%
+  );
+}
+@utility ridgeline-near {
+  clip-path: polygon(
+    0% 82%,
+    18% 56%,
+    34% 76%,
+    52% 46%,
+    68% 74%,
+    84% 52%,
+    100% 78%,
+    100% 100%,
+    0% 100%
+  );
+}
 
 /* Pressable things dip slightly under the finger. */
 @utility press {

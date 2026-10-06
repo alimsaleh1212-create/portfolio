@@ -10,8 +10,19 @@ const AA_UI = 3;
 const tokens = readTokens();
 const color = (name: string) => tokens.get(`--color-${name}`)!;
 
-/** Surfaces text can sit on: the page, a raised panel and the dawn glow behind the identity column. */
-const SURFACES = ["ground", "raised", "glow"];
+/** Surfaces text can sit on: the page, a raised panel, the dawn glow behind the identity column and the Climb's light. */
+const SURFACES = [
+  "ground",
+  "raised",
+  "glow",
+  // The Climb's light, Stage by Stage, up to the Summit.
+  "light-trailhead",
+  "light-long-approach",
+  "light-steep-switch",
+  "light-ridge",
+  "light-high-camp",
+  "light-summit",
+];
 
 const sources = import.meta.glob(
   ["../**/*.tsx", "!../**/*.test.tsx", "!../test/**"],
