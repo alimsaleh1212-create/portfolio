@@ -1,11 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation } from "react-router";
 
 import type { ClimbContentState } from "../api/useClimbContent";
 import { useClimbContent } from "../api/useClimbContent";
 import { Button } from "../components/Button";
 import { AltitudeMeter } from "../climb/AltitudeMeter";
-import { trackClimb } from "../climb/climb";
+import { trackClimb, useCurrentStage } from "../climb/climb";
 import { Opening } from "../climb/Opening";
 import { padClass, StageSection } from "../climb/StageSection";
 import { SummitAhead } from "../climb/SummitAhead";
@@ -59,6 +59,23 @@ function ClimbContent({
     () => trackClimb(keyList.split(","), recordStageReached),
     [keyList],
   );
+
+  // The address follows the Visitor, so what they copy is where they are.
+  const current = useCurrentStage();
+  const hadStage = useRef(false);
+  useEffect(() => {
+    if (current) {
+      hadStage.current = true;
+      window.history.replaceState(window.history.state, "", `#${current}`);
+    } else if (hadStage.current) {
+      hadStage.current = false;
+      window.history.replaceState(
+        window.history.state,
+        "",
+        window.location.pathname + window.location.search,
+      );
+    }
+  }, [current]);
 
   return (
     <div>

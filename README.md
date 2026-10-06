@@ -2,7 +2,7 @@
 
 Ali Saleh's personal portfolio. It presents his career to recruiters and hiring managers as a hiker's climb up a 3D mountain. The full spec is GitHub issue #1; the vocabulary is in `CONTEXT.md`.
 
-Every service runs under Docker Compose. The text content (profile, Stages, Projects) is in `content/` and the API serves it; the frontend shows it on the Summary page at <http://localhost:8080/summary> and on a page per Project at `/projects/{slug}` with links to the previous and next Project (`/` redirects to the Summary until the Climb exists; `/status` shows readiness).
+Every service runs under Docker Compose. The text content (profile, Stages, Projects) is in `content/` and the API serves it; the frontend shows it as the Climb at <http://localhost:8080/> (an opening screen, the five Stages as you scroll, the Summit ahead and the contact section, with an altitude meter; `/#ridge` and the other Stage keys open at that Stage), on the Summary page at `/summary`, and on a page per Project at `/projects/{slug}` with links to the previous and next Project (`/status` shows readiness). The Climb is plain page content today; the 3D mountain (ticket #15) will sit behind it.
 
 | Folder | Holds |
 |---|---|

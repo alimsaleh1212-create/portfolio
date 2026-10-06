@@ -87,6 +87,7 @@
   --spacing: 0.25rem;
   --spacing-gutter: 1.25rem;
   --spacing-gutter-wide: 2.5rem;
+  --spacing-meter: 5rem;
   --spacing-section: 4rem;
   --spacing-section-wide: 6rem;
   --container-page: 76rem;
@@ -263,6 +264,12 @@
   }
   main:focus {
     outline: none;
+  }
+  /* The altitude meter's bar sits over the bottom of narrow screens: keep focus clear of it. */
+  @variant max-lg {
+    :root:has(nav[aria-label="Altitude meter"]) {
+      scroll-padding-bottom: var(--spacing-meter);
+    }
   }
 }
 
