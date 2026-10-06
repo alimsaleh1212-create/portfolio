@@ -19,7 +19,10 @@ import lighthouse from "lighthouse";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const out = resolve(here, "../lighthouse-report");
-const base = (process.env.BASE_URL ?? "http://localhost:8080").replace(/\/$/, "");
+const base = (process.env.BASE_URL ?? "http://localhost:8080").replace(
+  /\/$/,
+  "",
+);
 const tag = process.env.LIGHTHOUSE_TAG ?? "";
 const FLOORS = {
   accessibility: 95,
@@ -57,7 +60,13 @@ try {
         extends: "lighthouse:default",
         settings: {
           formFactor: "mobile",
-          screenEmulation: { mobile: true, width: 360, height: 740, deviceScaleFactor: 2, disabled: false },
+          screenEmulation: {
+            mobile: true,
+            width: 360,
+            height: 740,
+            deviceScaleFactor: 2,
+            disabled: false,
+          },
         },
       },
     );
@@ -65,7 +74,10 @@ try {
     writeFileSync(join(out, `${name}${tag}.html`), report[0]);
     writeFileSync(join(out, `${name}${tag}.json`), report[1]);
     const scores = Object.fromEntries(
-      Object.entries(lhr.categories).map(([id, c]) => [id, Math.round((c.score ?? 0) * 100)]),
+      Object.entries(lhr.categories).map(([id, c]) => [
+        id,
+        Math.round((c.score ?? 0) * 100),
+      ]),
     );
     const audit = (id) => lhr.audits[id]?.numericValue;
     summary[name] = {
@@ -76,7 +88,11 @@ try {
       cls: audit("cumulative-layout-shift"),
     };
     console.log(
-      `${name.padEnd(8)} ${Object.entries(scores).map(([k, v]) => `${k} ${v}`).join("  ")}  | FCP ${Math.round(summary[name].fcp)} ms  LCP ${Math.round(summary[name].lcp)} ms  TBT ${Math.round(summary[name].tbt)} ms  CLS ${summary[name].cls.toFixed(3)}`,
+      `${name.padEnd(8)} ${Object.entries(scores)
+        .map(([k, v]) => `${k} ${v}`)
+        .join(
+          "  ",
+        )}  | FCP ${Math.round(summary[name].fcp)} ms  LCP ${Math.round(summary[name].lcp)} ms  TBT ${Math.round(summary[name].tbt)} ms  CLS ${summary[name].cls.toFixed(3)}`,
     );
     for (const [id, floor] of Object.entries(FLOORS)) {
       if (scores[id] < floor) {
@@ -85,7 +101,10 @@ try {
       }
     }
   }
-  writeFileSync(join(out, `scores${tag}.json`), JSON.stringify(summary, null, 2));
+  writeFileSync(
+    join(out, `scores${tag}.json`),
+    JSON.stringify(summary, null, 2),
+  );
 } finally {
   await chrome.kill();
 }

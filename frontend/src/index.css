@@ -254,10 +254,11 @@
   );
   --background-image-scrim-right: linear-gradient(
     270deg,
-    color-mix(in srgb, var(--color-ground) 80%, transparent),
-    color-mix(in srgb, var(--color-ground) 64%, transparent) 40%,
-    color-mix(in srgb, var(--color-ground) 24%, transparent) 54%,
-    transparent 68%
+    color-mix(in srgb, var(--color-ground) 82%, transparent),
+    color-mix(in srgb, var(--color-ground) 72%, transparent) 48%,
+    color-mix(in srgb, var(--color-ground) 50%, transparent) 58%,
+    color-mix(in srgb, var(--color-ground) 16%, transparent) 68%,
+    transparent 78%
   );
   /* A narrower scrim, for a Stage whose text column is short and whose cards sit over the scene. */
   --background-image-scrim-edge: linear-gradient(

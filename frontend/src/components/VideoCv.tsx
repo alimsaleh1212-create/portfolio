@@ -38,8 +38,8 @@ function useNearScreen(
   useEffect(() => {
     if (near || !ref.current) return;
     if (typeof IntersectionObserver === "undefined") {
-      setNear(true);
-      return;
+      const frame = requestAnimationFrame(() => setNear(true));
+      return () => cancelAnimationFrame(frame);
     }
     const watch = new IntersectionObserver(
       (entries) => {
