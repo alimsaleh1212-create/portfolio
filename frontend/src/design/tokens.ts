@@ -3,9 +3,9 @@ import { resolve } from "node:path";
 
 const css = readFileSync(resolve(process.cwd(), "src/index.css"), "utf8");
 
-/** The `@theme { ... }` block of index.css, where the tokens are declared. */
+/** The `@theme static { ... }` block of index.css, where the tokens are declared. */
 function themeBlock(source: string): string {
-  const start = source.indexOf("@theme {");
+  const start = source.search(/@theme(?: static)? \{/);
   if (start === -1) throw new Error("index.css has no @theme block");
   let depth = 0;
   for (let i = source.indexOf("{", start); i < source.length; i++) {

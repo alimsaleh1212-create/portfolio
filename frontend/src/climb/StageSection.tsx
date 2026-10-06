@@ -15,6 +15,13 @@ const SKY = {
   "high-camp": "bg-stage-high-camp",
 } as const;
 
+const SCRIM = {
+  left: "bg-scrim-veil lg:bg-scrim-left",
+  right: "bg-scrim-veil lg:bg-scrim-right",
+  // The Ridge's cards sit over the scene themselves, so only its short text column is shaded.
+  ridge: "bg-scrim-veil lg:bg-scrim-edge",
+} as const;
+
 const HORIZON = {
   trailhead: "bg-horizon-trailhead",
   "long-approach": "bg-horizon-long-approach",
@@ -53,12 +60,17 @@ export function StageSection({
       id={stage.key}
       tabIndex={-1}
       aria-labelledby={`${stage.key}-heading`}
-      className={`${SKY[stage.key]} relative flex min-h-dvh items-center overflow-hidden py-section md:py-section-wide focus:outline-none`}
+      className={`${SKY[stage.key]} scene:bg-none scene:overflow-visible relative flex min-h-dvh items-center overflow-hidden py-section md:py-section-wide focus:outline-none`}
     >
-      {/* The horizon's warmth, on the side without text. Wide screens only: below that the text is all across. */}
+      {/* The horizon's warmth, on the side without text. Wide screens only: below that the text is all across. The 3D scene has its own. */}
       <div
         aria-hidden="true"
-        className={`${HORIZON[stage.key]} pointer-events-none absolute inset-0 hidden lg:block`}
+        className={`${HORIZON[stage.key]} scene:hidden pointer-events-none absolute inset-0 hidden lg:block`}
+      />
+      {/* With the scene behind, the text column is darkened so the text stays readable over it. */}
+      <div
+        aria-hidden="true"
+        className={`${SCRIM[isRidge ? "ridge" : side]} scrim-fade scene:block pointer-events-none absolute -inset-y-40 hidden inset-x-0`}
       />
       <div className={`${padClass} relative w-full`}>
         <div
@@ -100,7 +112,7 @@ function Challenge({ stage }: { stage: Stage }) {
   const placeholder = stage.challenge_is_placeholder;
   return (
     <div
-      className={`reveal rounded-surface bg-ground/50 mt-8 max-w-measure border p-5 ${
+      className={`reveal rounded-surface bg-ground/50 scene:bg-ground/72 mt-8 max-w-measure border p-5 ${
         placeholder ? "border-ink/30 border-dashed" : "border-ink/20"
       }`}
     >
@@ -122,7 +134,7 @@ function Challenge({ stage }: { stage: Stage }) {
 /** A Project on the Ridge: enough to make a Visitor open it. The whole tile is the link. */
 function ProjectTile({ project }: { project: Project }) {
   return (
-    <li className="reveal group bg-ground/50 border-ink/15 rounded-surface relative border p-5 transition-colors has-focus-visible:border-accent hover-fine:border-accent">
+    <li className="reveal group bg-ground/50 scene:bg-ground/62 scene:backdrop-blur-sm border-ink/15 rounded-surface relative border p-5 transition-colors has-focus-visible:border-accent hover-fine:border-accent">
       <h3 className="pe-6 text-lg leading-snug font-semibold">
         <Link
           to={`/projects/${project.slug}`}

@@ -12,7 +12,11 @@
  * ground, one sunrise amber as the accent, a dusk rose used only inside the
  * horizon gradient.
  */
-@theme {
+/*
+ * `static` makes Tailwind write every token out as a CSS variable, used or not: the 3D scene
+ * reads its colours from them at runtime (`readSceneColors`), so none may be dropped.
+ */
+@theme static {
   /* Reset Tailwind's defaults so an unlisted value cannot be used by accident. */
   --color-*: initial;
   --text-*: initial;
@@ -61,6 +65,20 @@
   --color-ember-ridge: #b0507e;
   --color-ember-high-camp: #e8745c;
   --color-first-light: #ffc48a;
+
+  /*
+   * The mountain itself (ticket #15), read by the 3D scene at runtime. rock-deep, rock and
+   * scree are the stone from the dark foothills to the high crags; snow is what lies above
+   * the snow line and is also the cool lamp of the pre-dawn; trail is the packed-dirt path;
+   * pine is the forest in the valley; star is a star. Never used for text.
+   */
+  --color-rock-deep: #2d3356;
+  --color-rock: #565d8a;
+  --color-scree: #8c8bb0;
+  --color-snow: #dfe4f5;
+  --color-trail: #c79a74;
+  --color-pine: #2a5a5a;
+  --color-star: #f4efff;
 
   /*
    * Form fields. Navy on the night ground (the Summary); the Climb's last section
@@ -221,8 +239,60 @@
     transparent 55%
   );
 
+  /*
+   * Over the scene. The side of a Stage that holds text is darkened so the text stays at
+   * AA contrast over whatever the mountain shows there: from the text's own edge, across
+   * its column, fading out toward the mountain. On narrow screens the text spans the
+   * screen, so the whole Stage is veiled lightly and its text block is veiled again.
+   */
+  --background-image-scrim-left: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-ground) 86%, transparent),
+    color-mix(in srgb, var(--color-ground) 72%, transparent) 50%,
+    color-mix(in srgb, var(--color-ground) 38%, transparent) 62%,
+    transparent 78%
+  );
+  --background-image-scrim-right: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--color-ground) 86%, transparent),
+    color-mix(in srgb, var(--color-ground) 72%, transparent) 50%,
+    color-mix(in srgb, var(--color-ground) 38%, transparent) 62%,
+    transparent 78%
+  );
+  /* A narrower scrim, for a Stage whose text column is short and whose cards sit over the scene. */
+  --background-image-scrim-edge: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-ground) 86%, transparent),
+    color-mix(in srgb, var(--color-ground) 70%, transparent) 30%,
+    transparent 48%
+  );
+  --background-image-scrim-veil: linear-gradient(
+    color-mix(in srgb, var(--color-ground) 50%, transparent),
+    color-mix(in srgb, var(--color-ground) 50%, transparent)
+  );
+  /* The opening screen on a narrow screen: the text is at the top, the mountain below it. */
+  --background-image-scrim-top: linear-gradient(
+    color-mix(in srgb, var(--color-ground) 76%, transparent),
+    color-mix(in srgb, var(--color-ground) 56%, transparent) 46%,
+    transparent 84%
+  );
+  /* A soft shade down the right edge, behind the altitude meter's rail. */
+  --background-image-rail-shade: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--color-ground) 70%, transparent),
+    color-mix(in srgb, var(--color-ground) 42%, transparent) 55%,
+    transparent
+  );
+  /* The scene's last stretch settles into the slope the contact section sits on. */
+  --background-image-slope-rise: linear-gradient(
+    to bottom,
+    transparent,
+    var(--color-light-ground)
+  );
+
   /* Motion */
   --duration-fast: 150ms;
+  --duration-scene: 900ms;
   --duration-base: 240ms;
   --duration-pulse: 1600ms;
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
@@ -324,6 +394,10 @@
   main:focus {
     outline: none;
   }
+  /* With the scene drawn, the page's own ground steps aside; the scene is the ground. */
+  :root[data-scene] body {
+    background-color: transparent;
+  }
   /* The altitude meter's bar sits over the bottom of narrow screens: keep focus clear of it. */
   @variant max-lg {
     :root:has(nav[aria-label="Altitude meter"]) {
@@ -368,6 +442,35 @@
  */
 @custom-variant hover-fine (@media (hover: hover) and (pointer: fine));
 @custom-variant tall (@media (min-height: 50rem));
+
+/*
+ * The 3D scene is present: the page is told so by data-scene on the root, once its first
+ * frame has been drawn. Stage backgrounds then step aside and the scene shows through.
+ */
+@custom-variant scene (&:where([data-scene] *));
+
+/* The scene's layer fades in over the page's own sky, which it matches at the opening screen. */
+@utility scene-layer {
+  opacity: 0;
+  transition: opacity var(--duration-scene) var(--ease-out-strong);
+  &[data-drawn] {
+    opacity: 1;
+  }
+}
+
+/*
+ * A scrim fades out toward the top and bottom of its Stage, so one Stage's shade melts into
+ * the next one's instead of ending in a visible edge.
+ */
+@utility scrim-fade {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black 14%,
+    black 86%,
+    transparent
+  );
+}
 
 /* The Climb's last section: form fields take the sky's own ground. */
 @utility sky-fields {

@@ -19,8 +19,13 @@ export function Opening({
   return (
     <section
       aria-labelledby="climb-title"
-      className={`bg-light-trailhead relative flex min-h-dvh flex-col overflow-hidden pt-10 pb-section md:pt-section-wide ${padClass}`}
+      className={`bg-light-trailhead scene:bg-transparent scene:overflow-visible relative flex min-h-dvh flex-col overflow-hidden pt-10 pb-section md:pt-section-wide ${padClass}`}
     >
+      {/* With the mountain drawn behind, the text column is darkened so it stays readable. */}
+      <div
+        aria-hidden="true"
+        className="bg-scrim-top lg:bg-scrim-left scene:block pointer-events-none absolute inset-x-0 -top-20 bottom-0 -z-1 hidden"
+      />
       <div className="max-w-page relative z-10 mx-auto w-full">
         <div className="max-w-measure animate-rise">
           <h1
@@ -56,10 +61,10 @@ export function Opening({
           </div>
         </div>
       </div>
-      {/* The first ridgelines. The mountain of ticket #15 replaces them. */}
+      {/* Stand-in ridgelines for where no scene is drawn; the 3D mountain replaces them. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-48 md:h-72"
+        className="scene:hidden pointer-events-none absolute inset-x-0 bottom-0 h-48 md:h-72"
       >
         <div className="bg-light-long-approach ridgeline-far absolute inset-0" />
         <div className="bg-light-steep-switch ridgeline-near absolute inset-x-0 bottom-0 h-3/5" />

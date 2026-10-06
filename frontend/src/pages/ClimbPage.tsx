@@ -9,6 +9,7 @@ import { trackClimb, useCurrentStage } from "../climb/climb";
 import { Opening } from "../climb/Opening";
 import { padClass, StageSection } from "../climb/StageSection";
 import { SummitAhead } from "../climb/SummitAhead";
+import { SceneHost } from "../scene/SceneHost";
 import { usePageTitle } from "../usePageTitle";
 import { recordStageReached } from "../visit/visit";
 
@@ -79,6 +80,7 @@ function ClimbContent({
 
   return (
     <div>
+      <SceneHost />
       <Opening profile={profile} firstStage={keys[0]} />
       <AltitudeMeter stages={stages.map(({ key, name }) => ({ key, name }))} />
       {stages.map((stage) => (
