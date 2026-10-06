@@ -29,11 +29,15 @@ const FLOORS = {
 // The landing page is also measured with the full 3D tier forced: this machine class gets the
 // still tier by itself, but a laptop with a GPU gets the scene, and its cost must stay out of the
 // first load.
-const PAGES = [
+const ALL_PAGES = [
   ["landing", "/"],
   ["summary", "/summary"],
   ["landing-full", "/?tier=full"],
 ];
+
+// LIGHTHOUSE_ONLY=landing,summary limits the run.
+const only = process.env.LIGHTHOUSE_ONLY?.split(",");
+const PAGES = ALL_PAGES.filter(([name]) => !only || only.includes(name));
 
 const chromePath = process.env.CHROME_PATH ?? "/usr/bin/google-chrome";
 mkdirSync(out, { recursive: true });
@@ -81,7 +85,7 @@ try {
       }
     }
   }
-  writeFileSync(join(out, `summary${tag}.json`), JSON.stringify(summary, null, 2));
+  writeFileSync(join(out, `scores${tag}.json`), JSON.stringify(summary, null, 2));
 } finally {
   await chrome.kill();
 }

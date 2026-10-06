@@ -4,39 +4,31 @@ import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
 
 /**
- * The built page's stylesheet goes inside the page instead of being a second request that
- * blocks the first paint, and the body font the text is set in is preloaded (its request
- * would otherwise wait for the stylesheet to be read). The result is the pre-render's
- * template, so every page it writes carries both. Build only: the dev server keeps its link.
+ * Preload the body font. Its request otherwise waits for the stylesheet to be downloaded and
+ * read; with the hint it starts with the page, so the text is set in its own face at first paint
+ * and does not change shape a moment later. Build only; the result is the pre-render's template.
  */
-function inlineCriticalCss(): Plugin {
+function preloadBodyFont(): Plugin {
   return {
-    name: "inline-critical-css",
+    name: "preload-body-font",
     apply: "build",
-    enforce: "post",
     transformIndexHtml: {
       order: "post",
       handler(html, context) {
         const bundle = context.bundle;
-        if (!bundle) return html;
-        const link = /<link rel="stylesheet"[^>]*href="([^"]+\.css)"[^>]*>/;
-        const match = link.exec(html);
-        if (!match) return html;
-        const name = match[1].replace(/^\//, "");
-        const asset = bundle[name];
-        if (!asset || asset.type !== "asset") return html;
-        const css = String(asset.source);
+        const link =
+          /<link rel="stylesheet"[^>]*href="([^"]+\.css)"[^>]*>/.exec(html);
+        const asset = link && bundle?.[link[1].replace(/^\//, "")];
+        if (!link || !asset || asset.type !== "asset") return html;
         const font =
-          /url\((\/assets\/geist-latin-wght-normal-[\w-]+\.woff2)\)/.exec(css);
-        // The sheet is now part of the page; nothing else asks for the file.
-        delete bundle[name];
-        const preload = font
-          ? `<link rel="preload" as="font" type="font/woff2" crossorigin href="${font[1]}">\n    `
-          : "";
+          /url\((\/assets\/geist-latin-wght-normal-[\w-]+\.woff2)\)/.exec(
+            String(asset.source),
+          );
+        if (!font) return html;
         return html.replace(
-          link,
+          link[0],
           () =>
-            `${preload}<style>${css.replace(/<\/style/gi, "<\\/style")}</style>`,
+            `<link rel="preload" as="font" type="font/woff2" crossorigin href="${font[1]}">\n    ${link[0]}`,
         );
       },
     },
@@ -44,7 +36,7 @@ function inlineCriticalCss(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), inlineCriticalCss()],
+  plugins: [react(), tailwindcss(), preloadBodyFont()],
   build: {
     // The 3D scene is its own download, fetched after the text has painted; it is the one
     // chunk expected to be large (three.js), so the default 500 kB warning does not apply to it.
