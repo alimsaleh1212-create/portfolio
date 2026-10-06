@@ -145,3 +145,24 @@ describe("Summary, error", () => {
     );
   });
 });
+
+describe("Summary, contact", () => {
+  it("closes the page with the contact section, reachable from On this page", async () => {
+    stubApi(answerWithContent);
+    renderApp("/summary");
+    await screen.findByRole("heading", { level: 1, name: profile.name });
+
+    const jump = within(
+      screen.getByRole("navigation", { name: "On this page" }),
+    ).getByRole("link", { name: "Send a message" });
+    expect(jump).toHaveAttribute("href", "#contact");
+
+    const section = screen.getByRole("region", { name: "Send a message" });
+    expect(section).toHaveAttribute("id", "contact");
+    const sections = [...document.querySelectorAll("main section")];
+    expect(sections.at(-1)).toBe(section);
+    expect(
+      within(section).getByRole("textbox", { name: "Email address" }),
+    ).toBeInTheDocument();
+  });
+});

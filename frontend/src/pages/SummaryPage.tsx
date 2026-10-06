@@ -2,12 +2,14 @@ import { Link } from "react-router";
 
 import { findMedia } from "../api/media";
 import { Button } from "../components/Button";
+import { ContactSection } from "../components/ContactSection";
 import { CvDownload } from "../components/CvDownload";
 import { Portrait } from "../components/Portrait";
 import { VideoCv } from "../components/VideoCv";
 import { TagList } from "../components/TagList";
 import { useSummary } from "../api/useSummary";
 import type { MediaItem, Profile, Project } from "../api/types";
+import { displayUrl } from "../displayUrl";
 import { usePageTitle } from "../usePageTitle";
 
 const SECTIONS = [
@@ -15,6 +17,7 @@ const SECTIONS = [
   { id: "projects", label: "Projects" },
   { id: "skills", label: "Skills" },
   { id: "education", label: "Education" },
+  { id: "contact", label: "Send a message" },
 ] as const;
 
 // Tighter top and bottom on wide screens, so the identity column fits the first screen.
@@ -60,6 +63,7 @@ function SummaryContent({
     projects: projects.length > 0,
     skills: profile.skills.length > 0,
     education: profile.education.length > 0,
+    contact: true,
   };
   return (
     <div className={`relative animate-rise ${pageClass}`}>
@@ -306,6 +310,11 @@ function SummaryContent({
               )}
             </section>
           )}
+
+          <ContactSection
+            links={profile.links}
+            className="mt-section md:mt-section-wide"
+          />
         </div>
       </div>
     </div>
@@ -333,11 +342,6 @@ function ContactLink({
       </a>
     </li>
   );
-}
-
-/** "https://linkedin.com/in/x" becomes "linkedin.com/in/x". */
-function displayUrl(url: string): string {
-  return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
 }
 
 /** Holds the layout of the loaded page, so nothing jumps when the data arrives. */
