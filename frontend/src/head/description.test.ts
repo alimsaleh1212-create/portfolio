@@ -61,6 +61,26 @@ suite("describe", () => {
     expect(describe([two], 50)).toBe("I built agents for a team of nine.");
   });
 
+  it("ends at the last complete sentence that fits, however short it makes the description", () => {
+    const text =
+      "Short one. Second sentence is a bit longer than the first. " +
+      "Third sentence runs on and on past any limit we could set here.";
+    expect(describe([text], 70)).toBe(
+      "Short one. Second sentence is a bit longer than the first.",
+    );
+    expect(describe([text], 30)).toBe("Short one.");
+  });
+
+  it("does not take a full stop inside a word or number for the end of a sentence", () => {
+    expect(
+      describe(["Version 2.5 is out and it is quite good indeed"], 30),
+    ).toBe("Version 2.5 is out and it…");
+  });
+
+  it("ends a description that fits to the character on its full stop", () => {
+    expect(describe(["Ab. Cd."], 3)).toBe("Ab.");
+  });
+
   it("is plain text: no tags, no Markdown, one space between words", () => {
     const text = describe([
       "<h1>Title</h1>",

@@ -140,6 +140,7 @@ async function watchHydration(page: Page) {
       const root = document.getElementById("root");
       if (!root?.firstElementChild) return false;
       w.__serverRoot = root.firstElementChild;
+      w.__serverHead = document.querySelector('meta[property="og:title"]');
       w.__serverCount = root.querySelectorAll("*").length;
       return true;
     };
@@ -189,7 +190,13 @@ test.describe("with JavaScript", () => {
       await page.goto(path(projects[0].slug));
       // The browser has taken over once it has decided the tier.
       await expect(page.locator("html")).toHaveAttribute("data-tier", /.+/);
-      await page.waitForLoadState("networkidle");
+      // Hydration is done once the app's first effects have run: `useHead` then replaces the
+      // head tags the server wrote.
+      await page.waitForFunction(
+        () =>
+          document.querySelector('meta[property="og:title"]') !==
+          (window as unknown as Record<string, unknown>).__serverHead,
+      );
 
       expect(problems).toEqual([]);
       const report = await hydrationReport(page);

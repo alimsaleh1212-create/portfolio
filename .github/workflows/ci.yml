@@ -114,13 +114,24 @@ jobs:
       - uses: actions/checkout@v4
       - name: Create .env from the example
         run: cp .env.example .env
-      # The production images: the built frontend baked into Caddy, the API, and the seed, which
-      # stores the Hiker's model and the still pictures (both tracked in content/) in MinIO.
+      # The production images, built with a layer cache that outlives the run: the API, the seed
+      # (which installs ffmpeg), Caddy with the built frontend, and the pre-render job (which shares
+      # Caddy's frontend build). Without the cache each run rebuilt all of them from nothing.
       - uses: docker/setup-buildx-action@v3
-      # This builds and runs the one-shot `prerender` job, which Caddy waits for: a pre-render
-      # that cannot draw a page fails the stack here, and so the workflow.
-      - name: Build and start the stack
-        run: docker compose up -d --build --wait
+      - name: Build the production images with layer caching
+        uses: docker/bake-action@v6
+        with:
+          source: .
+          files: compose.yaml
+          targets: api,seed,caddy,prerender
+          set: |
+            *.cache-from=type=gha,scope=prod-stack
+            *.cache-to=type=gha,mode=max,scope=prod-stack
+          load: true
+      # The one-shot `prerender` job is part of the stack, and Caddy waits for it: a pre-render
+      # that cannot draw a page fails the stack here, and so the workflow. Nothing is built again.
+      - name: Start the stack
+        run: docker compose up -d --wait
       - name: Check what the pre-render wrote
         run: |
           docker compose logs prerender
@@ -131,16 +142,17 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Install dependencies and Chromium
+      # The runner already has Chrome (the tests use it through CHROME_PATH), so there is no
+      # browser to download and no system packages to install.
+      - name: Install dependencies
         working-directory: frontend
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium
+        run: npm ci
       - name: Run the browser tests
         working-directory: frontend
         run: npm run e2e
         env:
           BASE_URL: http://localhost:8080
+          CHROME_PATH: /usr/bin/google-chrome
       - name: Keep the report
         if: failure()
         uses: actions/upload-artifact@v4

@@ -38,21 +38,22 @@ function sentences(parts: string[]): string {
 
 /**
  * One description from one or more pieces of text, no longer than `max` characters. Pieces
- * are joined as sentences. A cut never lands inside a word.
+ * are joined as sentences. Too long, it ends at the last complete sentence that fits; only when
+ * the first sentence alone is too long does it end at a whole word with an ellipsis.
  */
 export function describe(parts: string[], max = DESCRIPTION_MAX): string {
   const text = sentences(parts);
   if (text.length <= max) return text;
 
-  // Prefer to stop at the end of a sentence, if one lands in the second half of the room.
+  // End at the last complete sentence that fits, however short.
   const room = text.slice(0, max);
-  const stops = [...room.matchAll(/[.!?](?=\s)/g)];
+  const stops = [...room.matchAll(/[.!?](?=\s|$)/g)].filter(
+    (stop) => stop.index + 1 === max || /\s/.test(text[stop.index + 1] ?? " "),
+  );
   const lastStop = stops.at(-1);
-  if (lastStop && lastStop.index + 1 >= max * 0.6) {
-    return room.slice(0, lastStop.index + 1);
-  }
+  if (lastStop) return room.slice(0, lastStop.index + 1);
 
-  // Otherwise end at a whole word, leaving room for the ellipsis.
+  // The first sentence alone is too long: end at a whole word, leaving room for the ellipsis.
   const limit = max - ELLIPSIS.length;
   let cut = text.slice(0, limit);
   if (!/\s/.test(text[limit] ?? "")) {
