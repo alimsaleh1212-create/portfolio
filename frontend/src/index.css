@@ -259,11 +259,16 @@
     color-mix(in srgb, var(--color-ground) 38%, transparent) 62%,
     transparent 78%
   );
+  /* A narrower scrim, for a Stage whose text column is short and whose cards sit over the scene. */
+  --background-image-scrim-edge: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-ground) 86%, transparent),
+    color-mix(in srgb, var(--color-ground) 70%, transparent) 30%,
+    transparent 48%
+  );
   --background-image-scrim-veil: linear-gradient(
-    color-mix(in srgb, var(--color-ground) 24%, transparent),
-    color-mix(in srgb, var(--color-ground) 48%, transparent) 24%,
-    color-mix(in srgb, var(--color-ground) 48%, transparent) 76%,
-    color-mix(in srgb, var(--color-ground) 24%, transparent)
+    color-mix(in srgb, var(--color-ground) 50%, transparent),
+    color-mix(in srgb, var(--color-ground) 50%, transparent)
   );
   /* The opening screen on a narrow screen: the text is at the top, the mountain below it. */
   --background-image-scrim-top: linear-gradient(

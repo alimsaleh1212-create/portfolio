@@ -19,12 +19,12 @@ export function Opening({
   return (
     <section
       aria-labelledby="climb-title"
-      className={`bg-light-trailhead scene:bg-transparent relative flex min-h-dvh flex-col overflow-hidden pt-10 pb-section md:pt-section-wide ${padClass}`}
+      className={`bg-light-trailhead scene:bg-transparent scene:overflow-visible relative flex min-h-dvh flex-col overflow-hidden pt-10 pb-section md:pt-section-wide ${padClass}`}
     >
       {/* With the mountain drawn behind, the text column is darkened so it stays readable. */}
       <div
         aria-hidden="true"
-        className="bg-scrim-top lg:bg-scrim-left scene:block pointer-events-none absolute inset-0 hidden"
+        className="bg-scrim-top lg:bg-scrim-left scene:block pointer-events-none absolute inset-x-0 -top-20 bottom-0 -z-1 hidden"
       />
       <div className="max-w-page relative z-10 mx-auto w-full">
         <div className="max-w-measure animate-rise">

@@ -18,6 +18,8 @@ const SKY = {
 const SCRIM = {
   left: "bg-scrim-veil lg:bg-scrim-left",
   right: "bg-scrim-veil lg:bg-scrim-right",
+  // The Ridge's cards sit over the scene themselves, so only its short text column is shaded.
+  ridge: "bg-scrim-veil lg:bg-scrim-edge",
 } as const;
 
 const HORIZON = {
@@ -68,7 +70,7 @@ export function StageSection({
       {/* With the scene behind, the text column is darkened so the text stays readable over it. */}
       <div
         aria-hidden="true"
-        className={`${SCRIM[isRidge ? "left" : side]} scrim-fade scene:block pointer-events-none absolute -inset-y-40 hidden inset-x-0`}
+        className={`${SCRIM[isRidge ? "ridge" : side]} scrim-fade scene:block pointer-events-none absolute -inset-y-40 hidden inset-x-0`}
       />
       <div className={`${padClass} relative w-full`}>
         <div
@@ -132,7 +134,7 @@ function Challenge({ stage }: { stage: Stage }) {
 /** A Project on the Ridge: enough to make a Visitor open it. The whole tile is the link. */
 function ProjectTile({ project }: { project: Project }) {
   return (
-    <li className="reveal group bg-ground/50 scene:bg-ground/72 border-ink/15 rounded-surface relative border p-5 transition-colors has-focus-visible:border-accent hover-fine:border-accent">
+    <li className="reveal group bg-ground/50 scene:bg-ground/62 scene:backdrop-blur-sm border-ink/15 rounded-surface relative border p-5 transition-colors has-focus-visible:border-accent hover-fine:border-accent">
       <h3 className="pe-6 text-lg leading-snug font-semibold">
         <Link
           to={`/projects/${project.slug}`}
