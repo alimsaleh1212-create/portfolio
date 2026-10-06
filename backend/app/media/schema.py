@@ -4,9 +4,15 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-MediaRole = Literal["portrait", "video_cv", "cv_pdf", "hiker"]
-ROLE_ORDER: tuple[MediaRole, ...] = ("portrait", "video_cv", "cv_pdf", "hiker")
-VariantKind = Literal["image", "video", "poster", "document", "model"]
+MediaRole = Literal["portrait", "video_cv", "cv_pdf", "hiker", "stills"]
+ROLE_ORDER: tuple[MediaRole, ...] = (
+    "portrait",
+    "video_cv",
+    "cv_pdf",
+    "hiker",
+    "stills",
+)
+VariantKind = Literal["image", "video", "poster", "document", "model", "still"]
 
 
 class Variant(BaseModel):
@@ -21,3 +27,5 @@ class Variant(BaseModel):
     size_bytes: int
     width: int | None = None
     height: int | None = None
+    name: str | None = None
+    """Which picture a still is, such as `ridge-wide`; None for everything else."""

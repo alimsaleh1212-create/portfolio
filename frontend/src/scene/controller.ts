@@ -67,22 +67,51 @@ export class SceneController {
   private hikerBusy = false;
   private covered = false;
   private occluder: ((box: ScreenBox) => boolean) | null = null;
+  private world: World;
+  private parts: Parts;
+  private scene: Scene | null = null;
+  private pixelRatio = 1;
 
   constructor(private readonly options: Options) {
+    this.world = options.world;
+    this.parts = options.parts;
     this.current = options.pinned ?? journeyAt(getClimb());
     this.target = this.current;
   }
 
   /** Put the scene's objects and fog into a three.js scene. Returns the function that takes them out and frees them. */
   mount(scene: Scene): () => void {
-    const { parts } = this.options;
-    scene.add(...parts.objects);
+    this.scene = scene;
+    scene.add(...this.parts.objects);
     scene.fog = this.fog;
     return () => {
-      scene.remove(...parts.objects);
+      scene.remove(...this.parts.objects);
       scene.fog = null;
-      parts.dispose();
+      this.parts.dispose();
+      this.scene = null;
     };
+  }
+
+  /**
+   * Trade the ground and everything built on it for a cheaper one, while running. The camera's
+   * place on the journey, the light, the Hiker and what subscribed to the scene are untouched,
+   * so nothing in the picture moves: only the mountain's detail changes.
+   */
+  swap(world: World, parts: Parts) {
+    const old = this.parts;
+    if (this.scene) {
+      this.scene.remove(...old.objects);
+      this.scene.add(...parts.objects);
+    }
+    this.world = world;
+    this.parts = parts;
+    this.setPixelRatio(this.pixelRatio);
+    old.dispose();
+  }
+
+  /** Where the camera has eased to along the journey. */
+  get journey(): number {
+    return this.current;
   }
 
   /** The Climb moved: ease toward its new position. */
@@ -163,7 +192,7 @@ export class SceneController {
   probe(camera: PerspectiveCamera, size: { width: number; height: number }) {
     const hiker = this.hiker;
     if (!hiker) return null;
-    const { world } = this.options;
+    const world = this.world;
     const project = (v: Vector3) => {
       const p = v.clone().project(camera);
       return {
@@ -193,7 +222,7 @@ export class SceneController {
 
   /** The scene's interface for later work, offered while the scene is mounted. */
   publish(): () => void {
-    const { world } = this.options;
+    const world = this.world;
     const trail = world.trail;
     const stages = STAGE_KEYS.map((key) => ({
       key,
@@ -205,7 +234,7 @@ export class SceneController {
       seed: world.seed,
       trail,
       stages,
-      heightAt: world.terrain.heightAt,
+      heightAt: (x, z) => this.world.terrain.heightAt(x, z),
       summit: new Vector3(
         world.landform.summit.x,
         world.landform.summit.y,
@@ -232,9 +261,8 @@ export class SceneController {
 
   /** Pixel-size dependent parts of the materials. */
   setPixelRatio(ratio: number) {
-    (
-      this.options.parts.stars.material as ShaderMaterial
-    ).uniforms.uScale.value = ratio;
+    this.pixelRatio = ratio;
+    (this.parts.stars.material as ShaderMaterial).uniforms.uScale.value = ratio;
   }
 
   /** One drawn frame: ease, then place the camera and set the light. */
@@ -244,7 +272,9 @@ export class SceneController {
     gl: WebGLRenderer,
     seconds: number,
   ) {
-    const { world, colors, parts } = this.options;
+    const { colors } = this.options;
+    const world = this.world;
+    const parts = this.parts;
     const before = this.current;
     this.current = stepJourney(this.current, this.target, seconds);
     if (this.current !== before) this.announce();

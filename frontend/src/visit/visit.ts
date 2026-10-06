@@ -8,6 +8,7 @@
  *
  * Recording never blocks or breaks the page: every failure is swallowed.
  */
+import type { Tier } from "../tier/decide";
 import { deviceClass } from "./device";
 
 const VISITS_URL = "/api/v1/visits";
@@ -52,8 +53,9 @@ function send(id: string, event: VisitEvent): void {
   }
 }
 
-async function requestVisit(): Promise<string | null> {
+async function requestVisit(tier?: Tier): Promise<string | null> {
   const body: Record<string, string> = { device: deviceClass() };
+  if (tier) body.tier = tier;
   if (document.referrer) body.referrer = document.referrer;
   const response = await post(VISITS_URL, body);
   if (response.status !== 201) return null;
@@ -65,12 +67,16 @@ async function requestVisit(): Promise<string | null> {
   return typeof id === "string" && UUID.test(id) ? id : null;
 }
 
-/** Start this page load's Visit. Calling it again does nothing, so strict mode's double effects are safe. */
-export function startVisit(): void {
+/**
+ * Start this page load's Visit, carrying the tier it is served when that is known (a failed
+ * decision starts the Visit without one rather than not at all). Calling it again does
+ * nothing, so strict mode's double effects are safe.
+ */
+export function startVisit(tier?: Tier): void {
   if (state.status !== "idle") return;
   const starting: State = { status: "starting", queue: [] };
   state = starting;
-  requestVisit()
+  requestVisit(tier)
     .catch(() => null)
     .then((id) => {
       const queued = starting.queue;

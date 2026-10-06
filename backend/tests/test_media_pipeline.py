@@ -21,6 +21,7 @@ from app.media.manifest import (
     HikerEntry,
     MediaManifest,
     PortraitEntry,
+    StillsEntry,
     VideoEntry,
     load_manifest,
 )
@@ -408,3 +409,69 @@ def test_a_hiker_path_outside_the_content_folder_is_rejected(tmp_path: Path) -> 
 
     with pytest.raises(ContentError, match="inside the content folder"):
         load_manifest(tmp_path)
+
+
+def _stills_folder(
+    env: Env, names: tuple[str, ...] = ("ridge-wide", "ridge-narrow")
+) -> None:
+    folder = env.content / "stills"
+    folder.mkdir(exist_ok=True)
+    for name in names:
+        wide = name.endswith("wide")
+        size = (1600, 1000) if wide else (585, 1200)
+        make_photo(folder / f"{name}.png", size=size, orientation=1)
+
+
+STILLS_MANIFEST = MANIFEST.model_copy(update={"stills": StillsEntry(folder="stills")})
+
+
+def test_the_stills_are_rendered_at_each_compositions_widths(env: Env) -> None:
+    _stills_folder(env)
+
+    report = env.sync(STILLS_MANIFEST)
+
+    assert "stills" in report.processed
+    variants = env.rows()["stills"]["variants"]
+    assert {variant["kind"] for variant in variants} == {"still"}
+    by_name: dict[str, set[int]] = {}
+    for variant in variants:
+        by_name.setdefault(variant["name"], set()).add(variant["width"])
+    assert by_name == {
+        "ridge-wide": {640, 1024, 1600},
+        "ridge-narrow": {360, 585},
+    }
+    assert {variant["format"] for variant in variants} == {"avif", "webp", "jpeg"}
+    first = variants[0]
+    assert first["key"].startswith("still-ridge-narrow-w360-")
+    assert anonymous(env.url(first["key"])) == 200
+
+
+def test_stills_are_stripped_of_metadata_and_left_alone_when_unchanged(
+    env: Env,
+) -> None:
+    _stills_folder(env)
+    env.sync(STILLS_MANIFEST)
+    keys = env.variant_keys("stills")
+
+    assert "stills" in env.sync(STILLS_MANIFEST).unchanged
+
+    # Replace one picture: the role is rebuilt and the old objects are removed.
+    make_photo(
+        env.content / "stills" / "ridge-wide.png", size=(1601, 1000), orientation=1
+    )
+    assert "stills" in env.sync(STILLS_MANIFEST).processed
+    assert env.variant_keys("stills") != keys
+    assert env.stored_keys() == env.variant_keys("stills")
+
+
+def test_a_stills_file_that_is_not_named_for_a_picture_is_refused(env: Env) -> None:
+    _stills_folder(env)
+    (env.content / "stills" / "notes.txt").write_text("hello")
+
+    with pytest.raises(prepare.StillsError, match="notes.txt"):
+        env.sync(STILLS_MANIFEST)
+
+
+def test_a_missing_stills_folder_is_an_error_not_a_skip(env: Env) -> None:
+    with pytest.raises(ContentError, match="not found in content"):
+        env.sync(STILLS_MANIFEST)

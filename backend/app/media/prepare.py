@@ -6,6 +6,7 @@ folder plus the `Variant` records that describe them.
 
 import hashlib
 import json
+import re
 import shutil
 import tempfile
 from collections.abc import Iterator
@@ -79,6 +80,11 @@ def settings_fingerprint(role: MediaRole, extra: str = "") -> str:
         }
     elif role == "hiker":
         settings = {"format": "glb"}
+    elif role == "stills":
+        settings = {
+            "widths": images.STILL_WIDTHS,
+            "quality": [images.AVIF_QUALITY, images.WEBP_QUALITY, images.JPEG_QUALITY],
+        }
     else:
         settings = {"disposition": extra}
     payload = json.dumps([role, settings, extra], sort_keys=True, default=list)
@@ -109,6 +115,7 @@ def _image_files(
     widths: tuple[int, ...],
     prefix: str,
     kind: str,
+    name: str | None = None,
 ) -> list[PreparedFile]:
     files: list[PreparedFile] = []
     for rendered in images.render_images(source, widths):
@@ -126,6 +133,7 @@ def _image_files(
                     size_bytes=len(rendered.data),
                     width=rendered.width,
                     height=rendered.height,
+                    name=name,
                 ),
             )
         )
@@ -215,6 +223,67 @@ def prepare_document(source: Path, download_name: str) -> Prepared:
             )
         ]
     )
+
+
+STILL_FILE = re.compile(r"^([a-z][a-z-]*)-(wide|narrow)\.png$")
+
+
+class StillsError(Exception):
+    """The stills folder holds no picture, or a file that is not named for one."""
+
+
+def still_sources(source: Path) -> list[tuple[Path, str, str]]:
+    """The pictures in a stills folder: `(path, name, composition)`, sorted by name.
+
+    Raises:
+        StillsError: If a file is not `<position>-<wide|narrow>.png`, or there is none.
+    """
+    found: list[tuple[Path, str, str]] = []
+    for path in sorted(source.iterdir()):
+        if path.name.startswith(".") or not path.is_file():
+            continue
+        if path.suffix == ".json":
+            continue  # stills.json: the capture script's record of what they came from
+        match = STILL_FILE.match(path.name)
+        if not match:
+            raise StillsError(
+                f"{path.name}: a still is named <position>-<wide|narrow>.png"
+            )
+        found.append((path, f"{match[1]}-{match[2]}", match[2]))
+    if not found:
+        raise StillsError(f"no pictures in {source.name}")
+    return found
+
+
+def stills_fingerprint(path: Path) -> str:
+    """One hash for the whole folder: every file's name and content."""
+    digest = hashlib.sha256()
+    for item, name, _ in still_sources(path):
+        digest.update(name.encode())
+        digest.update(bytes.fromhex(sha256_of_file(item)))
+    return digest.hexdigest()
+
+
+def prepare_stills(source: Path, folder: Path) -> Prepared:
+    """Render every still at its composition's widths in AVIF, WebP and JPEG.
+
+    Args:
+        source: Folder of `<position>-<wide|narrow>.png` files.
+        folder: Scratch folder for the output.
+    """
+    files: list[PreparedFile] = []
+    for path, name, composition in still_sources(source):
+        files.extend(
+            _image_files(
+                folder,
+                path,
+                images.STILL_WIDTHS[composition],
+                f"still-{name}",
+                "still",
+                name,
+            )
+        )
+    return Prepared(files=files)
 
 
 GLB_MAGIC = b"glTF"

@@ -66,11 +66,13 @@ export interface Project {
   media?: ProjectMedia[];
 }
 
-export type MediaRole = "portrait" | "video_cv" | "cv_pdf" | "hiker";
+export type MediaRole = "portrait" | "video_cv" | "cv_pdf" | "hiker" | "stills";
 
 /** One file of a media item; `url` is on our own origin under `/media/`. */
 export interface MediaVariant {
-  kind: "image" | "video" | "poster" | "document" | "model";
+  kind: "image" | "video" | "poster" | "document" | "model" | "still";
+  /** Which picture a still is, such as `steep-switch-wide`; null for everything else. */
+  name: string | null;
   /** avif, webp, jpeg, h264, pdf or glb. */
   format: string;
   content_type: string;

@@ -52,7 +52,9 @@ def test_the_endpoint_describes_each_item_that_exists(
         "size_bytes",
         "width",
         "height",
+        "name",
     }
+    assert first["name"] is None
     assert {v["format"] for v in portrait["variants"]} == {"avif", "webp", "jpeg"}
     assert pdf["download_name"] == "Test_CV.pdf"
     assert pdf["variants"][0]["format"] == "pdf"

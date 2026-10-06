@@ -47,6 +47,8 @@ class _Entry:
     poster_seconds: float = 0.0
     in_content: bool = False
     """The file is in the content folder (tracked), not the media folder."""
+    is_folder: bool = False
+    """`file` is a folder of pictures (the stills)."""
 
 
 def _entries(manifest: MediaManifest) -> list[_Entry]:
@@ -73,6 +75,16 @@ def _entries(manifest: MediaManifest) -> list[_Entry]:
     if manifest.hiker:
         by_role["hiker"] = _Entry(
             "hiker", manifest.hiker.file, None, None, "Hiker", in_content=True
+        )
+    if manifest.stills:
+        by_role["stills"] = _Entry(
+            "stills",
+            manifest.stills.folder,
+            None,
+            None,
+            "Stills",
+            in_content=True,
+            is_folder=True,
         )
     return [by_role[role] for role in ROLE_ORDER if role in by_role]
 
@@ -152,10 +164,11 @@ class MediaPipeline:
             entry.file
         )
         existing = await self._repository.get(entry.role)
-        if entry.in_content and not source.is_file():
+        present = source.is_dir() if entry.is_folder else source.is_file()
+        if entry.in_content and not present:
             # A tracked file is part of the repository: its absence is a mistake.
             raise ContentError(f"{entry.label}: {entry.file} not found in content")
-        if not source.is_file():
+        if not present:
             logger.warning(
                 "media_source_missing", role=entry.role, file=entry.file, skipped=True
             )
@@ -164,7 +177,10 @@ class MediaPipeline:
                 await self._repository.remove(entry.role)
                 report.removed.append(entry.role)
             return
-        source_hash = await asyncio.to_thread(prepare.sha256_of_file, source)
+        source_hash = await asyncio.to_thread(
+            prepare.stills_fingerprint if entry.is_folder else prepare.sha256_of_file,
+            source,
+        )
         fingerprint = prepare.settings_fingerprint(
             entry.role, entry.download_name or str(entry.poster_seconds)
         )
@@ -249,6 +265,8 @@ class MediaPipeline:
             return prepare.prepare_video(source, folder, entry.poster_seconds)
         if entry.role == "hiker":
             return prepare.prepare_model(source)
+        if entry.role == "stills":
+            return prepare.prepare_stills(source, folder)
         return prepare.prepare_document(source, entry.download_name or source.name)
 
     async def _sweep(self, report: MediaReport) -> None:

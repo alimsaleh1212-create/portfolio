@@ -1,4 +1,5 @@
 import { createNoise, lerp, mulberry32, smoothstep } from "./noise";
+import { drain, type Steps } from "./steps";
 import type { Landform } from "./landform";
 
 /** The ground's extent in scene units. The Summit's side is far away so the massif has room. */
@@ -43,6 +44,17 @@ export function createTerrain(
   cellsX = CELLS.x,
   cellsZ = CELLS.z,
 ): Terrain {
+  return drain(terrainSteps(landform, seed, bench, cellsX, cellsZ));
+}
+
+/** `createTerrain` as pausable work, for building without freezing the page (see `steps.ts`). */
+export function* terrainSteps(
+  landform: Landform,
+  seed: number,
+  bench: TrailBench | null,
+  cellsX = CELLS.x,
+  cellsZ = CELLS.z,
+): Steps<Terrain> {
   const { minX, maxX, minZ, maxZ } = BOUNDS;
   const dx = (maxX - minX) / cellsX;
   const dz = (maxZ - minZ) / cellsZ;
@@ -55,6 +67,7 @@ export function createTerrain(
   const lookup = bench ? benchIndex(bench) : null;
 
   for (let j = 0; j <= cellsZ; j++) {
+    if (j % 6 === 0) yield;
     for (let i = 0; i <= cellsX; i++) {
       const edge = i === 0 || j === 0 || i === cellsX || j === cellsZ;
       const x = minX + (i + (edge ? 0 : (random() * 2 - 1) * jitter)) * dx;
@@ -96,7 +109,7 @@ export function createTerrain(
     heightAt: () => 0,
   };
   terrain.heightAt = (x, z) => heightOnMesh(terrain, x, z, landform);
-  terrain.shade.set(bakeShade(terrain));
+  terrain.shade.set(yield* bakeShade(terrain));
   return terrain;
 }
 
@@ -210,7 +223,7 @@ function benchIndex(bench: TrailBench) {
  * How much each vertex lies in the shade of higher ground while the sun is low and off to
  * the left. A ray goes toward the sun; the more ground rises above it, the darker.
  */
-function bakeShade(terrain: Terrain): Float32Array {
+function* bakeShade(terrain: Terrain): Steps<Float32Array> {
   const { cellsX, cellsZ, vertices } = terrain;
   const width = stride(cellsX);
   const { minX, maxX, minZ, maxZ } = BOUNDS;
@@ -244,6 +257,7 @@ function bakeShade(terrain: Terrain): Float32Array {
   const rows = Math.ceil(cellsZ / skip) + 1;
   const coarse = new Float32Array(columns * rows);
   for (let cj = 0; cj < rows; cj++) {
+    if (cj % 3 === 0) yield;
     for (let ci = 0; ci < columns; ci++) {
       const i = Math.min(cellsX, ci * skip);
       const j = Math.min(cellsZ, cj * skip);
