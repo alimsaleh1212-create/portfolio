@@ -34,6 +34,25 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run pyright
 
+  observability-config:
+    name: Observability profile config
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+          working-directory: backend
+      - run: uv sync --frozen
+        working-directory: backend
+      # Needs no running stack: Compose is valid with the profile on and off,
+      # the provisioning and dashboard files parse, and every dashboard query
+      # names a data source that provisioning creates.
+      - run: uv run python ../infra/observability/check_config.py
+        working-directory: backend
+
   backend-tests:
     name: Backend tests (Postgres, Redis, MinIO)
     runs-on: ubuntu-latest
