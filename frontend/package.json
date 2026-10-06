@@ -12,7 +12,8 @@
     "stills": "node scripts/capture-stills.mjs",
     "e2e": "playwright test",
     "build:prerender": "vite build --ssr src/prerender/run.ts --outDir dist-prerender",
-    "prerender": "node dist-prerender/run.js"
+    "prerender": "node dist-prerender/run.js",
+    "lighthouse": "node scripts/lighthouse.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

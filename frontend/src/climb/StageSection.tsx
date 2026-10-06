@@ -93,7 +93,7 @@ export function StageSection({
                 <p className="max-w-measure mt-5 text-lg">{stage.body}</p>
               </div>
               <Challenge stage={stage} />
-              {video && <VideoCv item={video} />}
+              {video && <VideoCv item={video} deferPoster />}
             </div>
             {isRidge && (
               <ul className="grid gap-4 sm:grid-cols-2 lg:col-span-7">
