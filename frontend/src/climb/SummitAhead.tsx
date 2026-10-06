@@ -8,10 +8,10 @@ import { padClass } from "./StageSection";
  */
 export function SummitAhead({ links }: { links: Links }) {
   return (
-    <div id="summit" className="bg-summit-sky">
+    <div id="summit" className="bg-light-ground sky-fields">
       <section
         aria-labelledby="summit-heading"
-        className={`py-section md:py-section-wide ${padClass}`}
+        className={`bg-summit-sky relative overflow-hidden py-section md:py-section-wide ${padClass}`}
       >
         <div className="max-w-page mx-auto grid items-center gap-x-16 gap-y-12 lg:grid-cols-12">
           <div className="lg:col-span-5">
@@ -32,9 +32,10 @@ export function SummitAhead({ links }: { links: Links }) {
             aria-hidden="true"
             className="relative mx-auto h-64 w-full max-w-72 md:h-80 md:max-w-96 lg:col-span-6 lg:col-start-7"
           >
-            <div className="bg-summit-glow absolute inset-x-0 bottom-0 h-3/4 opacity-40" />
+            <div className="bg-summit-glow absolute -inset-x-1/2 -top-1/4 -bottom-8" />
             <div className="bg-summit-face peak absolute inset-0" />
             <div className="bg-light-ridge peak-shade absolute inset-0 opacity-70" />
+            <div className="bg-peak-foot peak absolute inset-0" />
           </div>
         </div>
       </section>

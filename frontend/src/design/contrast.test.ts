@@ -22,6 +22,10 @@ const SURFACES = [
   "light-ridge",
   "light-high-camp",
   "light-summit",
+  "light-ground",
+  // Form fields: navy on the night ground, and the Climb's own ground.
+  "field",
+  "light-field",
 ];
 
 const sources = import.meta.glob(
@@ -69,6 +73,49 @@ describe("text contrast, WCAG AA", () => {
     expect(contrastRatio(color("focus"), color(bg))).toBeGreaterThanOrEqual(
       AA_UI,
     );
+  });
+
+  // A Stage's sky is a gradient, so text is checked against every colour it passes through.
+  // The darkest and lightest points are among the stops. The horizon glows are the only
+  // lighter colours, and text never sits on them (they have no text-safe stops to check).
+  const skies = [...tokens]
+    .filter(([key]) => /^--background-image-(stage-|summit-sky)/.test(key))
+    .map(
+      ([key, value]) =>
+        [
+          key.replace("--background-image-", ""),
+          [...value.matchAll(/var\(--color-([\w-]+)\)/g)].map((m) => m[1]),
+        ] as const,
+    );
+
+  it("checks the five Stage skies and the Summit's", () => {
+    expect(skies.map(([name]) => name)).toEqual([
+      "stage-trailhead",
+      "stage-long-approach",
+      "stage-steep-switch",
+      "stage-ridge",
+      "stage-high-camp",
+      "summit-sky",
+    ]);
+  });
+
+  it.each(skies)(
+    "every text colour is at least 4.5:1 across the %s gradient",
+    (_name, stops) => {
+      for (const stop of stops) {
+        for (const fg of onSurfaces) {
+          expect(contrastRatio(color(fg), color(stop))).toBeGreaterThanOrEqual(
+            AA_TEXT,
+          );
+        }
+      }
+    },
+  );
+
+  it("makes the Climb's form field edge visible on its ground", () => {
+    expect(
+      contrastRatio(color("light-field-edge"), color("light-ground")),
+    ).toBeGreaterThanOrEqual(AA_UI);
   });
 
   it("passes for a known pair, so the check can fail", () => {

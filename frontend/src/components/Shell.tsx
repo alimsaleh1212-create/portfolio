@@ -55,7 +55,7 @@ export function Shell() {
       </main>
       {/* On the Climb the footer continues the Summit's sky, so the page does not end on a seam. */}
       <footer
-        className={`border-line text-ink-muted border-t px-gutter md:px-gutter-wide ${pathname === "/" ? "bg-light-summit max-lg:pb-meter" : ""}`}
+        className={`border-line text-ink-muted border-t px-gutter md:px-gutter-wide ${pathname === "/" ? "bg-light-ground max-lg:pb-meter" : ""}`}
       >
         <div className="max-w-page mx-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-6 text-sm">
           <p>Ali Saleh, AI development specialist.</p>

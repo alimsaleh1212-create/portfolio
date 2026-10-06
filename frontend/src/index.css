@@ -35,19 +35,42 @@
   --color-dusk: #8f4f7a;
 
   /*
-   * Colour: the Climb's light (ADR 0001). The sky at the top of each Stage, from
-   * pre-dawn at the Trailhead to sunrise at High Camp. A Stage's background runs from
-   * its own colour to the next Stage's, so the page warms continuously. The Summit's
-   * colour ends the page. Text sits on these, so each is a surface in the contrast test;
-   * first-light is the Summit catching the sun and is never a text background.
+   * Colour: the Climb's light (ADR 0001). A dawn sky keeps its depth overhead and gathers
+   * its warmth at the horizon, so the light is two sets of tokens.
+   * light-*: the sky overhead at the top of each Stage, dark enough for text to sit on
+   *   anywhere: night blue at the Trailhead, through indigo and violet, to plum and
+   *   rose-plum at High Camp. A Stage's sky runs from its own colour to the next one's.
+   *   light-ground is the dark slope under the Summit. These are the colours the 3D
+   *   scene's sky and fog will take (ticket #15).
+   * ember-*: the horizon's warmth at each Stage, from blue to amber. Brighter than text
+   *   can sit on, so it is used only in glows on the side of a Stage with no text.
+   * first-light: the Summit catching the sun.
+   * Every text colour is checked on every light-* colour and on every stop of every
+   * sky gradient (contrast.test.ts).
    */
   --color-light-trailhead: #0a0d18;
-  --color-light-long-approach: #101734;
-  --color-light-steep-switch: #1c1a36;
-  --color-light-ridge: #2d1d32;
-  --color-light-high-camp: #43241f;
-  --color-light-summit: #5b2f20;
+  --color-light-long-approach: #0f1630;
+  --color-light-steep-switch: #1b1d46;
+  --color-light-ridge: #2d2152;
+  --color-light-high-camp: #43254f;
+  --color-light-summit: #5a2848;
+  --color-light-ground: #1c1424;
+  --color-ember-trailhead: #1a2a66;
+  --color-ember-long-approach: #2f3a86;
+  --color-ember-steep-switch: #6a4396;
+  --color-ember-ridge: #b0507e;
+  --color-ember-high-camp: #e8745c;
   --color-first-light: #ffc48a;
+
+  /*
+   * Form fields. Navy on the night ground (the Summary); the Climb's last section
+   * re-points them to its own ground (see the sky-fields utility), so the contact
+   * component never needs to know where it is.
+   */
+  --color-field: #121830;
+  --color-field-edge: #3d4770;
+  --color-light-field: #2b1c35;
+  --color-light-field-edge: #8a76a0;
 
   /* Colour: text and accent */
   --color-ink: #efe9e4;
@@ -116,7 +139,7 @@
     transparent
   );
 
-  /* The Climb's light as backgrounds: one per Stage, then the sky above High Camp. */
+  /* The Climb's sky as backgrounds: one per Stage, then the Summit's. */
   --background-image-stage-trailhead: linear-gradient(
     to bottom,
     var(--color-light-trailhead),
@@ -145,10 +168,40 @@
   --background-image-summit-sky: linear-gradient(
     to bottom,
     var(--color-light-summit),
-    var(--color-light-high-camp) 60%,
-    var(--color-light-summit)
+    var(--color-light-summit) 45%,
+    var(--color-light-ground)
   );
-  /* First light on the Summit's face, and the glow the sun makes behind it. */
+  /*
+   * The horizon's warmth, one glow per Stage on the side without text. Each fades out
+   * before the section's top and bottom edges, so one Stage's sky joins the next's.
+   * Nothing readable sits on these.
+   */
+  --background-image-horizon-trailhead: radial-gradient(
+    ellipse 40% 30% at 80% 62%,
+    var(--color-ember-trailhead),
+    transparent
+  );
+  --background-image-horizon-long-approach: radial-gradient(
+    ellipse 40% 30% at 20% 62%,
+    var(--color-ember-long-approach),
+    transparent
+  );
+  --background-image-horizon-steep-switch: radial-gradient(
+    ellipse 42% 32% at 80% 64%,
+    var(--color-ember-steep-switch),
+    transparent
+  );
+  --background-image-horizon-ridge: radial-gradient(
+    ellipse 40% 30% at 18% 70%,
+    var(--color-ember-ridge),
+    transparent
+  );
+  --background-image-horizon-high-camp: radial-gradient(
+    ellipse 44% 34% at 20% 66%,
+    var(--color-ember-high-camp),
+    transparent
+  );
+  /* First light on the Summit's face, the sun's glow behind it, and the slope under it. */
   --background-image-summit-face: linear-gradient(
     115deg,
     var(--color-first-light),
@@ -157,9 +210,15 @@
     var(--color-light-ridge)
   );
   --background-image-summit-glow: radial-gradient(
-    ellipse 50% 70% at 50% 100%,
+    ellipse 50% 45% at 50% 58%,
     var(--color-first-light),
+    var(--color-ember-high-camp) 45%,
     transparent
+  );
+  --background-image-peak-foot: linear-gradient(
+    to top,
+    var(--color-light-ground),
+    transparent 55%
   );
 
   /* Motion */
@@ -309,6 +368,12 @@
  */
 @custom-variant hover-fine (@media (hover: hover) and (pointer: fine));
 @custom-variant tall (@media (min-height: 50rem));
+
+/* The Climb's last section: form fields take the sky's own ground. */
+@utility sky-fields {
+  --color-field: var(--color-light-field);
+  --color-field-edge: var(--color-light-field-edge);
+}
 
 /* Facets of the Summit's peak and the ridgelines: flat polygons, drawn in CSS. */
 @utility peak {
