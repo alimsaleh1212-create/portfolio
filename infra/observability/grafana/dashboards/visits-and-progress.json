@@ -1,0 +1,806 @@
+{
+  "uid": "visits-progress",
+  "title": "Visits and Progress",
+  "description": "Who visited, how far up the Climb they got, and the messages they sent. Every panel follows the dashboard's time range (UTC days).",
+  "tags": [
+    "portfolio"
+  ],
+  "schemaVersion": 41,
+  "version": 1,
+  "editable": false,
+  "graphTooltip": 1,
+  "timezone": "utc",
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "refresh": "",
+  "fiscalYearStartMonth": 0,
+  "liveNow": false,
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Visits",
+      "description": "Visits that started in the selected time range.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT count(*) AS \"Visits\" FROM visits WHERE $__timeFilter(started_at)",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3987e5"
+          },
+          "unit": "short",
+          "noValue": "0",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Projects opened",
+      "description": "Project pages opened by Visits in the selected range (a Visit that opens one Project twice counts it once per page view recorded).",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT count(*) AS \"Projects opened\" FROM visit_events WHERE type = 'project_opened' AND $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3987e5"
+          },
+          "unit": "short",
+          "noValue": "0",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "CV downloads",
+      "description": "CV downloads recorded in the selected range.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT count(*) AS \"CV downloads\" FROM visit_events WHERE type = 'cv_downloaded' AND $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3987e5"
+          },
+          "unit": "short",
+          "noValue": "0",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Contact messages sent",
+      "description": "Messages stored in the selected range. They are listed at the bottom of this dashboard.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT count(*) AS \"Contact messages sent\" FROM contact_messages WHERE $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3987e5"
+          },
+          "unit": "short",
+          "noValue": "0",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Visits per day",
+      "description": "Visits that started on each UTC day of the selected range.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT d AS time, count(v.id) AS \"Visits\"\nFROM generate_series(\n  date_trunc('day', $__timeFrom()::timestamptz AT TIME ZONE 'UTC'),\n  date_trunc('day', $__timeTo()::timestamptz AT TIME ZONE 'UTC'),\n  interval '1 day') AS d\nLEFT JOIN visits v\n  ON date_trunc('day', v.started_at AT TIME ZONE 'UTC') = d\n AND $__timeFilter(v.started_at)\nGROUP BY d ORDER BY d",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3987e5"
+          },
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "No Visits in this time range",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 90,
+            "lineWidth": 1,
+            "barAlignment": 0,
+            "axisLabel": "Visits per day",
+            "axisSoftMin": 0,
+            "axisSoftMax": 3,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "mode": "none"
+            },
+            "gradientMode": "none"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Unique Visitors per day",
+      "description": "Distinct daily Visitor hashes per UTC day. The hash changes every day, so a returning Visitor counts once on each day and no figure across days is shown. A Visit with no hash (Redis was down) is not counted.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT d AS time, count(DISTINCT v.visitor_hash) AS \"Unique Visitors\"\nFROM generate_series(\n  date_trunc('day', $__timeFrom()::timestamptz AT TIME ZONE 'UTC'),\n  date_trunc('day', $__timeTo()::timestamptz AT TIME ZONE 'UTC'),\n  interval '1 day') AS d\nLEFT JOIN visits v\n  ON date_trunc('day', v.started_at AT TIME ZONE 'UTC') = d\n AND $__timeFilter(v.started_at)\nGROUP BY d ORDER BY d",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3987e5"
+          },
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "No Visitors in this time range",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 90,
+            "lineWidth": 1,
+            "barAlignment": 0,
+            "axisLabel": "Unique Visitors per day",
+            "axisSoftMin": 0,
+            "axisSoftMax": 3,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "mode": "none"
+            },
+            "gradientMode": "none"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "barchart",
+      "title": "Visits per Stage (Progress funnel)",
+      "description": "For each Stage in Climb order, the Visits whose Progress is that Stage or a higher one. Same logic as the visits_per_stage view, restricted to the selected time range.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT s.name AS \"Stage\", count(p.visit_id) AS \"Visits\"\nFROM stages s\nLEFT JOIN visit_progress p\n  ON p.progress_stage_position >= s.position AND $__timeFilter(p.started_at)\nGROUP BY s.position, s.name\nORDER BY s.position",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 12,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3987e5"
+          },
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "No data in this time range",
+          "custom": {
+            "axisLabel": "Visits that reached the Stage",
+            "axisPlacement": "auto",
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "Stage",
+        "showValue": "always",
+        "barWidth": 0.7,
+        "groupWidth": 0.8,
+        "stacking": "none",
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "fullHighlight": false
+      }
+    },
+    {
+      "id": 8,
+      "type": "barchart",
+      "title": "Referring sites",
+      "description": "Host of the referring site, top 10. Visits with no referrer are (direct).",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(referrer_host, '(direct)') AS \"Referring site\", count(*) AS \"Visits\"\nFROM visits WHERE $__timeFilter(started_at)\nGROUP BY 1 ORDER BY 2 DESC, 1 LIMIT 10",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 12,
+        "w": 12,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3987e5"
+          },
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "No data in this time range",
+          "custom": {
+            "axisLabel": "Visits",
+            "axisPlacement": "auto",
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "Referring site",
+        "showValue": "always",
+        "barWidth": 0.7,
+        "groupWidth": 0.8,
+        "stacking": "none",
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "fullHighlight": false
+      }
+    },
+    {
+      "id": 9,
+      "type": "barchart",
+      "title": "Device classes",
+      "description": "Phone, tablet or desktop, from the Visit's start.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT device_class AS \"Device class\", count(*) AS \"Visits\"\nFROM visits WHERE $__timeFilter(started_at)\nGROUP BY 1 ORDER BY 2 DESC, 1",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 8,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3987e5"
+          },
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "No data in this time range",
+          "custom": {
+            "axisLabel": "Visits",
+            "axisPlacement": "auto",
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "Device class",
+        "showValue": "always",
+        "barWidth": 0.7,
+        "groupWidth": 0.8,
+        "stacking": "none",
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "fullHighlight": false
+      }
+    },
+    {
+      "id": 10,
+      "type": "barchart",
+      "title": "Tiers served",
+      "description": "The tier the Climb was served in: full, light or still. (unknown) when the Visit did not report one.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(tier, '(unknown)') AS \"Tier\", count(*) AS \"Visits\"\nFROM visits WHERE $__timeFilter(started_at)\nGROUP BY 1 ORDER BY 2 DESC, 1",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 8,
+        "y": 21,
+        "w": 8,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3987e5"
+          },
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "No data in this time range",
+          "custom": {
+            "axisLabel": "Visits",
+            "axisPlacement": "auto",
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "Tier",
+        "showValue": "always",
+        "barWidth": 0.7,
+        "groupWidth": 0.8,
+        "stacking": "none",
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "fullHighlight": false
+      }
+    },
+    {
+      "id": 11,
+      "type": "barchart",
+      "title": "Projects opened by Project",
+      "description": "Every Project, most opened first, so a Project nobody opened shows as zero.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT p.name AS \"Project\", count(e.id) AS \"Opened\"\nFROM projects p\nLEFT JOIN visit_events e\n  ON e.project_slug = p.slug AND e.type = 'project_opened' AND $__timeFilter(e.created_at)\nGROUP BY p.position, p.name\nORDER BY 2 DESC, p.position",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 16,
+        "y": 21,
+        "w": 8,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#3987e5"
+          },
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "No data in this time range",
+          "custom": {
+            "axisLabel": "Times opened",
+            "axisPlacement": "auto",
+            "fillOpacity": 100,
+            "lineWidth": 0,
+            "gradientMode": "none",
+            "axisSoftMin": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "Project",
+        "showValue": "always",
+        "barWidth": 0.7,
+        "groupWidth": 0.8,
+        "stacking": "none",
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "fullHighlight": false
+      }
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Contact messages",
+      "description": "Messages Visitors sent, newest first, in the selected range. Personal details: this dashboard is private.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "postgres"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "postgres"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT created_at AS \"Received\", name AS \"Name\", email AS \"Address\", message AS \"Message\"\nFROM contact_messages WHERE $__timeFilter(created_at)\nORDER BY created_at DESC LIMIT 200",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 24,
+        "h": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "No contact messages in this time range",
+          "custom": {
+            "align": "left",
+            "cellOptions": {
+              "type": "auto",
+              "wrapText": true
+            },
+            "filterable": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Received"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Address"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 260
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "md",
+        "footer": {
+          "show": false
+        }
+      }
+    }
+  ]
+}
