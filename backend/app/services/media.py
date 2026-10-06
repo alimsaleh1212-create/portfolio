@@ -1,8 +1,9 @@
 """Media service: each prepared item described for the API."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
 from app.data.media_repo import MediaRepository
+from app.data.response_cache import ResponseCache
 from app.media.schema import ROLE_ORDER, MediaRole, VariantKind
 
 MEDIA_URL_PREFIX = "/media/"
@@ -34,18 +35,29 @@ class MediaItem(BaseModel):
     variants: list[MediaVariant]
 
 
+MEDIA_JSON = TypeAdapter(list[MediaItem])
+
+
 class MediaService:
     """Serves the prepared media."""
 
-    def __init__(self, repository: MediaRepository) -> None:
-        """Store the repository to read from."""
+    def __init__(self, repository: MediaRepository, cache: ResponseCache) -> None:
+        """Store the repository to read from and the cache in front of it."""
         self._repository = repository
+        self._cache = cache
 
-    async def list_items(self) -> list[MediaItem]:
-        """Return the items that exist, in a fixed role order.
+    async def list_items(self) -> bytes:
+        """Return the items that exist, as a JSON body in a fixed role order.
 
         A role whose source file was never supplied is absent from the list.
         """
+
+        async def load() -> bytes:
+            return MEDIA_JSON.dump_json(await self._items())
+
+        return await self._cache.get_or_load("media", "media", load)
+
+    async def _items(self) -> list[MediaItem]:
         records = {
             record.role: record for record in await self._repository.list_items()
         }

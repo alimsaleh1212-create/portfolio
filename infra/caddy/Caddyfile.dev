@@ -19,6 +19,8 @@
 	}
 }
 
+import /etc/caddy/compress.caddy
+
 :80 {
 	handle /caddy-health {
 		respond "ok" 200
@@ -27,6 +29,8 @@
 	import /etc/caddy/media.caddy
 
 	handle /api/* {
+		# The API sets its own Cache-Control and ETag; Caddy only compresses.
+		import compress
 		reverse_proxy api:8000 {
 			# The API takes the client address from this header (only to hash
 			# it, never to store it). Set it, do not append to it: whatever the
@@ -35,6 +39,9 @@
 			header_up X-Forwarded-For {remote_host}
 			header_up -Forwarded
 			header_up -X-Real-Ip
+			# encode appends -gzip or -zstd to an ETag it compresses, so a browser
+			# revalidates with a tag the API never issued. Give the API back its own.
+			header_up If-None-Match "-(?:gzip|zstd)(\"|$)" "$1"
 		}
 	}
 

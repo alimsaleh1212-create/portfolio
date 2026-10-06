@@ -30,6 +30,14 @@ Open <http://localhost:8080> (change the port with `CADDY_PORT` in `.env`). Cadd
 - `GET /api/v1/projects` returns the six Projects in the CV's order; `GET /api/v1/projects/{slug}` returns one, or 404.
 - `GET /api/v1/media` describes the Portrait, Video CV and CV PDF that exist: each one's role, alt text, variants (address, format, size, dimensions) and, for the video, its duration. A role with no source file is absent.
 
+## Caching
+
+The five read endpoints are cached in Redis and carry a strong `ETag` with `Cache-Control: no-cache`, so a browser asks again and gets `304` when it already has the latest copy. Content only changes when the seed runs, and the seed invalidates the cache itself as its last step, so the next request after a seed returns the new content. If Redis is down the endpoints answer from Postgres and log one warning. Visits, contact and health are sent `Cache-Control: no-store`.
+
+Caddy serves the hashed files in `/assets/` with a one-year `immutable` header, serves the HTML document and favicon so browsers revalidate them, and compresses text and JSON.
+
+Cache hit, miss and error counts are at `http://api:9100/metrics` inside the Compose network (not published, not proxied by Caddy). Clear the cache by hand with `docker compose run --rm api python -m app.clear_cache`; it leaves the Visitor salt and rate-limit counters alone. Tunables: `CACHE_TTL_SECONDS`, `CACHE_TIMEOUT_SECONDS`, `METRICS_PORT`.
+
 Stop with `docker compose down`; add `-v` to also delete the data volumes.
 
 ## Visits and privacy

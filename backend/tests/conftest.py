@@ -10,18 +10,35 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from redis import Redis
 from sqlalchemy.engine import make_url
 
 from app.config import Settings, get_settings
 from app.main import create_app
 from tests.db_helpers import drop_database, execute, recreate_database
 from tests.media_helpers import drop_bucket
+from tests.visit_helpers import scratch_redis_url
 
 
 @pytest.fixture(scope="session")
 def settings() -> Settings:
     """Settings from the environment, which points at the Compose services."""
-    return get_settings().model_copy(update={"health_check_timeout_seconds": 1.0})
+    return get_settings().model_copy(
+        update={
+            "health_check_timeout_seconds": 1.0,
+            # Redis database 15 belongs to the tests, so they never read or write
+            # the response cache of a stack running on database 0.
+            "redis_url": scratch_redis_url(get_settings().redis_url),
+            # The metrics endpoint has its own test; other apps do not bind a port.
+            "metrics_port": 0,
+        }
+    )
+
+
+@pytest.fixture(autouse=True)
+def empty_scratch_redis(settings: Settings) -> None:
+    """Start each test with an empty scratch Redis, so no cache carries over."""
+    Redis.from_url(settings.redis_url).flushdb()
 
 
 @pytest.fixture

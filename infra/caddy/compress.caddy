@@ -1,0 +1,15 @@
+# Compress text answers when the client asks for it. The list names the types
+# that gain from it (JSON, HTML, CSS, scripts, SVG, plain text, the web manifest).
+# Fonts, images, video and PDFs are already compressed, so they are not listed,
+# and /media/ never imports this.
+(compress) {
+	encode zstd gzip {
+		match {
+			header Content-Type text/*
+			header Content-Type application/json*
+			header Content-Type application/javascript*
+			header Content-Type application/manifest+json*
+			header Content-Type image/svg+xml*
+		}
+	}
+}

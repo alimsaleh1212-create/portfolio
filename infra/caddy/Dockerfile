@@ -8,4 +8,5 @@ RUN npm run build
 FROM caddy:2-alpine
 COPY infra/caddy/Caddyfile /etc/caddy/Caddyfile
 COPY infra/caddy/media.caddy /etc/caddy/media.caddy
+COPY infra/caddy/compress.caddy /etc/caddy/compress.caddy
 COPY --from=frontend /app/dist /srv

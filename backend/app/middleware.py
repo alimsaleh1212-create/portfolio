@@ -96,6 +96,36 @@ class RequestIdMiddleware:
             structlog.contextvars.clear_contextvars()
 
 
+class NoStoreMiddleware:
+    """Mark every `/api/` response `Cache-Control: no-store` unless it says otherwise.
+
+    The cached read endpoints set their own `Cache-Control`. Everything else the
+    API answers (Visits, contact, health, errors, unknown paths) must never be
+    stored by a browser or a proxy, so this is the default rather than a list
+    to remember to extend. It also covers answers produced before a route runs,
+    such as a 413 or a 422.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        """Wrap an ASGI app."""
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Handle one ASGI connection."""
+        if scope["type"] != "http" or not scope["path"].startswith("/api/"):
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with_default(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                if "cache-control" not in headers:
+                    headers["Cache-Control"] = "no-store"
+            await send(message)
+
+        await self.app(scope, receive, send_with_default)
+
+
 class BodyLimitMiddleware:
     """Refuse request bodies larger than a small limit with 413.
 
