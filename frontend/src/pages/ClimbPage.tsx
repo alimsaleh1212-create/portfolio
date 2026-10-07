@@ -74,6 +74,9 @@ function ClimbContent({
   const current = useCurrentStage();
   const hadStage = useRef(false);
   useEffect(() => {
+    // While the router is moving to another page the address already is that page's; this
+    // page's last Stage must not be written onto it.
+    if (window.location.pathname !== "/") return;
     if (current) {
       hadStage.current = true;
       window.history.replaceState(window.history.state, "", `#${current}`);

@@ -4,6 +4,7 @@ import { Vector3 } from "three";
 import {
   fieldOfView,
   journeyAt,
+  keepInFrame,
   poseAt,
   POSE_KEYS,
   progressAt,
@@ -177,5 +178,27 @@ describe("the camera", () => {
   it("is a wider view on a narrow screen", () => {
     expect(fieldOfView(50, 1.6)).toBe(50);
     expect(fieldOfView(50, 0.5)).toBeGreaterThan(50);
+  });
+});
+
+describe("keepInFrame", () => {
+  const bounds = { x: [-0.5, 0.5], y: [-0.7, 0.2] } as const;
+  it("leaves a shift alone while the Hiker stays inside the bounds", () => {
+    expect(keepInFrame({ x: 0.1, y: -0.2 }, { x: 0.1, y: 0 }, bounds)).toEqual({
+      x: 0.1,
+      y: 0,
+    });
+  });
+  it("pulls a Hiker that is off to the left back to the edge", () => {
+    const shift = keepInFrame({ x: -1.4, y: 0 }, { x: 0, y: 0 }, bounds);
+    expect(-1.4 + 2 * shift.x).toBeCloseTo(-0.5);
+  });
+  it("lifts a Hiker that is below the screen and lowers one above it", () => {
+    expect(
+      -1.3 + 2 * keepInFrame({ x: 0, y: -1.3 }, { x: 0, y: 0 }, bounds).y,
+    ).toBeCloseTo(-0.7);
+    expect(
+      0.9 + 2 * keepInFrame({ x: 0, y: 0.9 }, { x: 0, y: 0 }, bounds).y,
+    ).toBeCloseTo(0.2);
   });
 });

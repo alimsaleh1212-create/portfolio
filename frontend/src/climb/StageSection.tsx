@@ -56,54 +56,62 @@ export function StageSection({
       : "lg:col-span-5 lg:col-start-7";
 
   return (
-    <section
-      id={stage.key}
-      tabIndex={-1}
-      aria-labelledby={`${stage.key}-heading`}
-      className={`${SKY[stage.key]} scene:bg-none scene:overflow-visible relative flex min-h-dvh items-center overflow-hidden py-section md:py-section-wide focus:outline-none`}
-    >
-      {/* The horizon's warmth, on the side without text. Wide screens only: below that the text is all across. The 3D scene has its own. */}
-      <div
-        aria-hidden="true"
-        className={`${HORIZON[stage.key]} scene:hidden pointer-events-none absolute inset-0 hidden lg:block`}
-      />
-      {/* With the scene behind, the text column is darkened so the text stays readable over it. */}
-      <div
-        aria-hidden="true"
-        className={`${SCRIM[isRidge ? "ridge" : side]} scrim-fade scene:block pointer-events-none absolute -inset-y-40 hidden inset-x-0`}
-      />
-      <div className={`${padClass} relative w-full`}>
+    <>
+      <section
+        id={stage.key}
+        tabIndex={-1}
+        aria-labelledby={`${stage.key}-heading`}
+        className={`${SKY[stage.key]} scene:bg-none scene:overflow-visible scene:max-lg:min-h-0 relative flex min-h-dvh items-center overflow-hidden py-section md:py-section-wide focus:outline-none`}
+      >
+        {/* The horizon's warmth, on the side without text. Wide screens only: below that the text is all across. The 3D scene has its own. */}
         <div
-          className={`max-w-page mx-auto grid gap-x-16 gap-y-12 lg:grid-cols-12 ${isRidge ? "lg:items-start" : "lg:items-center"}`}
-        >
-          <div className={textColumn}>
-            <div className="reveal">
-              {stage.period && (
-                <p className="text-accent font-mono text-sm tabular-nums">
-                  {stage.period}
-                </p>
-              )}
-              <h2
-                id={`${stage.key}-heading`}
-                className="text-title mt-2 font-semibold tracking-tight"
-              >
-                {stage.name}
-              </h2>
-              <p className="max-w-measure mt-5 text-lg">{stage.body}</p>
+          aria-hidden="true"
+          className={`${HORIZON[stage.key]} scene:hidden pointer-events-none absolute inset-0 hidden lg:block`}
+        />
+        {/* With the scene behind, the text column is darkened so the text stays readable over it. On a narrow screen it is an even backing behind the text only, and the page leaves an open band after it. */}
+        <div
+          aria-hidden="true"
+          className={`${SCRIM[isRidge ? "ridge" : side]} scrim-fade-fixed lg:scrim-fade scene:block pointer-events-none absolute -inset-y-section lg:-inset-y-40 hidden inset-x-0`}
+        />
+        <div className={`${padClass} relative w-full`}>
+          <div
+            className={`max-w-page mx-auto grid gap-x-16 gap-y-12 lg:grid-cols-12 ${isRidge ? "lg:items-start" : "lg:items-center"}`}
+          >
+            <div className={textColumn}>
+              <div className="reveal">
+                {stage.period && (
+                  <p className="text-accent font-mono text-sm tabular-nums">
+                    {stage.period}
+                  </p>
+                )}
+                <h2
+                  id={`${stage.key}-heading`}
+                  className="text-title mt-2 font-semibold tracking-tight"
+                >
+                  {stage.name}
+                </h2>
+                <p className="max-w-measure mt-5 text-lg">{stage.body}</p>
+              </div>
+              <Challenge stage={stage} />
+              {video && <VideoCv item={video} deferPoster />}
             </div>
-            <Challenge stage={stage} />
-            {video && <VideoCv item={video} />}
+            {isRidge && (
+              <ul className="grid gap-4 sm:grid-cols-2 lg:col-span-7">
+                {projects.map((project) => (
+                  <ProjectTile key={project.slug} project={project} />
+                ))}
+              </ul>
+            )}
           </div>
-          {isRidge && (
-            <ul className="grid gap-4 sm:grid-cols-2 lg:col-span-7">
-              {projects.map((project) => (
-                <ProjectTile key={project.slug} project={project} />
-              ))}
-            </ul>
-          )}
         </div>
-      </div>
-    </section>
+      </section>
+      {/* Open band: where the scene shows unobstructed on a narrow screen. */}
+      <div
+        aria-hidden="true"
+        data-testid="scene-band"
+        className="scene-band pointer-events-none hidden scene:max-lg:block"
+      />
+    </>
   );
 }
 

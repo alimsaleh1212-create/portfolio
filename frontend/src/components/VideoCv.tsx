@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { formatDuration, nearestWidth } from "../api/media";
 import type { MediaItem } from "../api/types";
@@ -23,12 +23,51 @@ function useSmallScreen(): boolean {
   );
 }
 
+// How far ahead of the screen a deferred poster starts to load: well before it can be seen.
+const POSTER_LEAD = "100% 0%";
+
+/**
+ * True once `element` is within a screen's height of the screen. Where nothing can observe
+ * (no IntersectionObserver) it is true at once, so a poster is never withheld for good.
+ */
+function useNearScreen(
+  ref: React.RefObject<Element | null>,
+  wanted: boolean,
+): boolean {
+  const [near, setNear] = useState(!wanted);
+  useEffect(() => {
+    if (near || !ref.current) return;
+    if (typeof IntersectionObserver === "undefined") {
+      const frame = requestAnimationFrame(() => setNear(true));
+      return () => cancelAnimationFrame(frame);
+    }
+    const watch = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) setNear(true);
+      },
+      { rootMargin: POSTER_LEAD },
+    );
+    watch.observe(ref.current);
+    return () => watch.disconnect();
+  }, [near, ref]);
+  return near;
+}
+
 /**
  * The Video CV with the browser's own controls. `preload="none"` means nothing but the
  * poster is fetched until the Visitor presses play. Small screens get the 720p file.
  */
-export function VideoCv({ item }: { item: MediaItem }) {
+export function VideoCv({
+  item,
+  deferPoster = false,
+}: {
+  item: MediaItem;
+  /** The video is far down its page (the Climb's High Camp): its poster is fetched only when the Visitor nears it. */
+  deferPoster?: boolean;
+}) {
   const small = useSmallScreen();
+  const frameRef = useRef<HTMLElement>(null);
+  const near = useNearScreen(frameRef, deferPoster);
   const renditions = item.variants
     .filter(
       (variant) => variant.kind === "video" && variant.width && variant.height,
@@ -45,7 +84,7 @@ export function VideoCv({ item }: { item: MediaItem }) {
   );
 
   return (
-    <figure className="mt-section md:mt-section-wide">
+    <figure ref={frameRef} className="mt-section md:mt-section-wide">
       <h2 id="video-heading" className="text-xl font-semibold tracking-snug">
         Video CV
       </h2>
@@ -54,7 +93,7 @@ export function VideoCv({ item }: { item: MediaItem }) {
         controls
         playsInline
         preload="none"
-        poster={poster?.url}
+        poster={near ? poster?.url : undefined}
         src={chosen.url}
         aria-labelledby="video-heading"
         aria-describedby="video-caption"

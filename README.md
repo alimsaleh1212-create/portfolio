@@ -185,3 +185,12 @@ npm run lint && npm run typecheck
 ```
 
 `npm test` also checks that components use design tokens only (no literal colours, sizes or timings, no arbitrary Tailwind values) and that every text and surface colour pairing meets WCAG AA. The tokens are in `frontend/src/index.css`. Fonts (Geist) are self-hosted through `@fontsource` packages, and the site makes no request to any other origin.
+
+Browser tests and Lighthouse (stack up; `cd frontend`, `BASE_URL` is the address Caddy listens on):
+
+```sh
+BASE_URL=http://localhost:8080 npm run e2e          # Playwright: the whole Climb, privacy, accessibility (axe), keyboard, budgets, tiers, pre-rendering
+BASE_URL=http://localhost:8080 npm run lighthouse   # phone profile; writes frontend/lighthouse-report/
+```
+
+The browser tests send real contact messages from each tier, and the API allows only three an hour per client, so start the stack for them with `CONTACT_LIMIT_PER_HOUR=1000` in `.env` (CI does). They also look in the stack's Postgres (`docker compose exec`) to see that a Visit's Progress and a message were stored. `npm run e2e` fails on any serious or critical axe violation, on a throttled phone profile whose text takes more than 2.5 seconds or whose layout shifts by 0.1 or more, and on any cookie or storage written during a full Visit; `npm run lighthouse` fails when Accessibility or Best Practices is under 95 on the landing page, the Summary or the landing page with the full tier forced, and reports Performance without gating on it. CI runs both on every pull request and keeps the Lighthouse reports as an artifact.

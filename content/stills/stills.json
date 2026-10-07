@@ -1,6 +1,6 @@
 {
   "note": "Written by frontend/scripts/capture-stills.mjs. Do not edit. `npm test` fails when the fingerprint no longer matches the scene.",
-  "fingerprint": "199805511f20da22045bcf3f261298b7984af99694d4c5f25b50c056c7779302",
+  "fingerprint": "3629608ec1a48387f99781378df28f351e691ce57df04fdf562046aaf3addb1e",
   "compositions": {
     "wide": {
       "viewport": {
@@ -55,19 +55,19 @@
       "hiker": "1.00"
     },
     "long-approach-narrow.png": {
-      "journey": 1.9995,
+      "journey": 1.9999,
       "hiker": "1.00"
     },
     "steep-switch-narrow.png": {
-      "journey": 2.9995,
+      "journey": 2.9998,
       "hiker": "1.00"
     },
     "ridge-narrow.png": {
-      "journey": 3.9995,
+      "journey": 3.9998,
       "hiker": "1.00"
     },
     "high-camp-narrow.png": {
-      "journey": 5,
+      "journey": 4.9999,
       "hiker": "1.00"
     },
     "summit-narrow.png": {

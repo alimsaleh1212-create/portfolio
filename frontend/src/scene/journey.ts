@@ -177,3 +177,35 @@ export function fieldOfView(fov: number, aspect: number): number {
     Math.PI;
   return Math.max(fov, needed);
 }
+
+/**
+ * Where a narrow screen's picture is shifted so the Hiker stays in the frame. On a phone the
+ * text runs across the screen, so the authored shifts cannot hold the Hiker in view all the
+ * way: its place on the trail drifts from the camera's during a leg. `base` is the Hiker's
+ * place on the screen (NDC, -1 to 1) with no shift, `shift` the authored one (a fraction of
+ * the screen, which moves the picture by twice that in NDC). The authored shift is kept
+ * whenever the Hiker is inside `bounds` with it; otherwise it is the smallest change that
+ * brings the Hiker to the nearest edge of `bounds`.
+ */
+export const HIKER_FRAME = {
+  x: [-0.55, 0.55],
+  /** Feet, above the page's bottom bar and clear of the top of the screen. */
+  y: [-0.7, 0.2],
+} as const;
+
+export function keepInFrame(
+  base: { x: number; y: number },
+  shift: { x: number; y: number },
+  bounds: { x: readonly [number, number]; y: readonly [number, number] },
+): { x: number; y: number } {
+  const clamp = (v: number, [lo, hi]: readonly [number, number]) =>
+    Math.min(hi, Math.max(lo, v));
+  const axis = (b: number, sh: number, range: readonly [number, number]) => {
+    const at = b + 2 * sh;
+    return at >= range[0] && at <= range[1] ? sh : (clamp(at, range) - b) / 2;
+  };
+  return {
+    x: axis(base.x, shift.x, bounds.x),
+    y: axis(base.y, shift.y, bounds.y),
+  };
+}

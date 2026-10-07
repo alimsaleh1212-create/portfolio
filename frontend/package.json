@@ -12,7 +12,10 @@
     "stills": "node scripts/capture-stills.mjs",
     "e2e": "playwright test",
     "build:prerender": "vite build --ssr src/prerender/run.ts --outDir dist-prerender",
-    "prerender": "node dist-prerender/run.js"
+    "prerender": "node dist-prerender/run.js",
+    "lighthouse": "node scripts/lighthouse.mjs",
+    "e2e:core": "playwright test --grep-invert @a11y",
+    "e2e:a11y": "playwright test --grep @a11y"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
@@ -25,6 +28,7 @@
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
@@ -40,6 +44,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.13.0",
     "jsdom": "^30.1.2",
+    "lighthouse": "^13.5.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.1",
